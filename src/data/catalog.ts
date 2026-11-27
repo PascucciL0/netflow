@@ -9,8 +9,11 @@ import { flattenTopics } from "@/engine/catalog";
 import blueprintJson from "../../content/ccna/blueprint.json";
 import trackJson from "../../content/ccna/track.json";
 import core001 from "../../content/ccna/items/core-001.json";
+import core002 from "../../content/ccna/items/core-002.json";
+import core003 from "../../content/ccna/items/core-003.json";
+import core004 from "../../content/ccna/items/core-004.json";
 
-const SEED_PACKAGES: unknown[] = [core001];
+const SEED_PACKAGES: unknown[] = [core001, core002, core003, core004];
 
 export const blueprint: Blueprint = BlueprintSchema.parse(blueprintJson);
 export const tracks: Track[] = [TrackSchema.parse(trackJson)];

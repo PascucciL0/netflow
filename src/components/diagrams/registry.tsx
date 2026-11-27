@@ -88,6 +88,100 @@ export const DIAGRAMS: Record<string, { title: string; render: () => ReactNode }
       />
     ),
   },
+  "dot1q-frame": {
+    title: "Frame Ethernet con tag 802.1Q",
+    render: () => (
+      <FieldStrip
+        spec={{
+          title: "Frame Ethernet con tag 802.1Q",
+          fields: [
+            { name: "Dest. MAC", size: "6 B" },
+            { name: "Source MAC", size: "6 B" },
+            { name: "802.1Q tag", size: "4 B · TPID 0x8100 + PCP/DEI/VID", group: "trailer" },
+            { name: "Type", size: "2 B" },
+            { name: "Payload", size: "42–1500 B", group: "payload" },
+            { name: "FCS", size: "4 B", group: "trailer" },
+          ],
+        }}
+      />
+    ),
+  },
+  "ipv6-gua-structure": {
+    title: "Struttura di un indirizzo IPv6 Global Unicast",
+    render: () => (
+      <FieldStrip
+        spec={{
+          title: "Indirizzo IPv6 Global Unicast con prefisso /48 assegnato al sito",
+          fields: [
+            { name: "Global routing prefix", size: "48 bit · assegnato al sito" },
+            { name: "Subnet ID", size: "16 bit · scelto dall'azienda", group: "trailer" },
+            { name: "Interface ID", size: "64 bit · host", group: "payload" },
+          ],
+        }}
+      />
+    ),
+  },
+  "slaac-exchange": {
+    title: "SLAAC: Router Solicitation, Router Advertisement e DAD",
+    render: () => (
+      <SequenceDiagram
+        spec={{
+          title: "SLAAC e Duplicate Address Detection",
+          actors: [
+            { id: "h", label: "Host", sub: "fe80::…/64" },
+            { id: "r", label: "R1", sub: "2001:db8:1::1/64" },
+          ],
+          messages: [
+            { from: "h", to: "r", label: "Router Solicitation (133)", detail: "verso ff02::2 · tutti i router", broadcast: true },
+            { from: "r", to: "h", label: "Router Advertisement (134)", detail: "prefisso 2001:db8:1::/64 · flag M/O", broadcast: true },
+            { from: "h", to: "r", label: "Neighbor Solicitation (135)", detail: "DAD verso solicited-node · qualcuno usa già l'indirizzo?", broadcast: true },
+          ],
+        }}
+      />
+    ),
+  },
+  "pat-translation": {
+    title: "PAT: traduzione di indirizzo e porta",
+    render: () => (
+      <SequenceDiagram
+        spec={{
+          title: "PAT (NAT overload) su R1",
+          actors: [
+            { id: "pc", label: "PC1", sub: "192.168.1.10" },
+            { id: "r", label: "R1 (NAT)", sub: "203.0.113.5" },
+            { id: "s", label: "Server", sub: "198.51.100.20" },
+          ],
+          messages: [
+            { from: "pc", to: "r", label: "src 192.168.1.10:51000", detail: "inside local" },
+            { from: "r", to: "s", label: "src 203.0.113.5:51000", detail: "inside global · voce nella NAT table" },
+            { from: "s", to: "r", label: "dst 203.0.113.5:51000", detail: "risposta" },
+            { from: "r", to: "pc", label: "dst 192.168.1.10:51000", detail: "traduzione inversa" },
+          ],
+        }}
+      />
+    ),
+  },
+  "ospf-adjacency": {
+    title: "Formazione di un'adiacenza OSPF",
+    render: () => (
+      <SequenceDiagram
+        spec={{
+          title: "Da Down a Full su un link point-to-point",
+          actors: [
+            { id: "a", label: "R1", sub: "RID 1.1.1.1" },
+            { id: "b", label: "R2", sub: "RID 2.2.2.2" },
+          ],
+          messages: [
+            { from: "a", to: "b", label: "Hello", detail: "224.0.0.5 · R2: Down → Init", broadcast: true },
+            { from: "b", to: "a", label: "Hello (vede 1.1.1.1)", detail: "R1: 2-Way", broadcast: true },
+            { from: "a", to: "b", label: "DBD", detail: "ExStart → Exchange · riassunto LSDB" },
+            { from: "b", to: "a", label: "LSR / LSU", detail: "Loading · LSA mancanti" },
+            { from: "a", to: "b", label: "LSAck", detail: "LSDB sincronizzate · Full" },
+          ],
+        }}
+      />
+    ),
+  },
 };
 
 export const isKnownDiagram = (id: string): boolean => id in DIAGRAMS;

@@ -1,0 +1,1231 @@
+{
+  "format": "netflow.content-package",
+  "schemaVersion": 1,
+  "package": {
+    "id": "netflow-core-ccna-002",
+    "title": "NetFlow — Libreria CCNA (lotto 2): VLAN, trunk, STP, EtherChannel",
+    "language": "it",
+    "generator": "NetFlow seed curato",
+    "createdAt": "2026-11-27",
+    "notes": "Contenuti originali. Le fonti con verifiedOn sono state consultate il 2026-11-27; le altre sono riferimenti da verificare."
+  },
+  "items": [
+    {
+      "id": "vlan-concept",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Cos'è una VLAN e quale problema risolve",
+      "summary": "Una VLAN divide uno switch fisico in più LAN logiche: ogni VLAN è un Broadcast Domain separato. Per passare da una VLAN all'altra serve il routing.",
+      "body": "Senza VLAN, tutte le porte di uno switch appartengono allo stesso **Broadcast Domain**: un ARP Request, un DHCP Discover o un frame con MAC address di destinazione sconosciuto raggiungono ogni host collegato. In una rete con centinaia di dispositivi questo significa traffico inutile e nessuna separazione tra reparti.\n\nUna **VLAN** (Virtual LAN) raggruppa le porte dello switch in LAN logiche indipendenti. Lo switch mantiene la MAC Address Table per VLAN ed esegue il flooding **solo verso le porte della stessa VLAN**.\n\n### Cosa cambia in pratica\n- **Separazione a livello 2**: un host della VLAN 10 non riceve i broadcast della VLAN 20.\n- **Una VLAN corrisponde di norma a una subnet IP**: VLAN 10 = 192.168.10.0/24, VLAN 20 = 192.168.20.0/24.\n- **Comunicazione tra VLAN solo tramite un dispositivo di livello 3** (router o switch multilayer), che è anche il punto in cui applicare ACL e controlli.\n\n### Esempio\n| VLAN | Uso | Subnet |\n|---|---|---|\n| 10 | Uffici | 192.168.10.0/24 |\n| 20 | Stampanti | 192.168.20.0/24 |\n| 30 | Telefoni IP | 192.168.30.0/24 |\n\nLa VLAN 1 è quella di default: tutte le porte vi appartengono finché non vengono assegnate ad altre VLAN. In azienda si evita di usarla per il traffico degli utenti.",
+      "trackId": "ccna",
+      "topicId": "vlans",
+      "difficulty": 1,
+      "prerequisites": [
+        "switching-fundamentals"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.2"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "VLAN Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 1000) — Configuring VLAN Trunks",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "vlan",
+        "broadcast-domain",
+        "switch"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "broadcast",
+          "prompt": "Un PC nella VLAN 10 invia un ARP Request. Quali host lo ricevono e perché?",
+          "answer": "Solo gli host collegati a porte della VLAN 10 (sullo stesso switch e, tramite i trunk, sugli altri switch). Lo switch esegue il flooding del broadcast solo all'interno della VLAN di provenienza, perché ogni VLAN è un Broadcast Domain separato.",
+          "keyPoints": [
+            "Flooding limitato alla VLAN",
+            "Ogni VLAN = un Broadcast Domain",
+            "I trunk estendono la VLAN tra switch"
+          ],
+          "commonMistakes": [
+            "Pensare che il broadcast arrivi a tutte le porte dello switch",
+            "Pensare che serva un router per separare i broadcast all'interno dello stesso switch"
+          ]
+        }
+      ],
+      "related": [
+        "access-port-config",
+        "trunk-8021q",
+        "router-vs-switch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "access-port-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Configurare una Access Port e la Voice VLAN",
+      "summary": "Una Access Port appartiene a una sola VLAN dati e invia frame senza tag. Per un telefono IP si aggiunge la Voice VLAN sulla stessa porta.",
+      "body": "Una **Access Port** collega un dispositivo finale (PC, stampante, dispositivo IoT). Appartiene a **una sola VLAN dati** e i frame escono senza tag 802.1Q: l'host non sa nulla di VLAN.\n\n```\nSW1(config)# vlan 10\nSW1(config-vlan)# name UFFICI\nSW1(config-vlan)# vlan 30\nSW1(config-vlan)# name VOCE\nSW1(config-vlan)# exit\nSW1(config)# interface range gigabitEthernet1/0/1 - 24\nSW1(config-if-range)# switchport mode access\nSW1(config-if-range)# switchport access vlan 10\nSW1(config-if-range)# switchport voice vlan 30\n```\n\n- `switchport mode access` fissa la porta in modalità access e disattiva la negoziazione di un trunk.\n- `switchport access vlan 10` assegna la VLAN dati. Se la VLAN non esiste ancora, molti switch la creano automaticamente.\n- `switchport voice vlan 30` aggiunge una **Voice VLAN**: il telefono IP marca il proprio traffico con il tag della VLAN 30, mentre il PC collegato alla porta del telefono resta nella VLAN 10 senza tag.\n\n### Verifica\n```\nSW1# show vlan brief\nSW1# show interfaces gigabitEthernet1/0/1 switchport\n```\nIn `show vlan brief` le Access Port compaiono accanto alla loro VLAN; i trunk invece **non** compaiono in questo elenco.",
+      "trackId": "ccna",
+      "topicId": "vlans",
+      "difficulty": 1,
+      "prerequisites": [
+        "vlans"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.2",
+        "ccna-v2:2.2.a",
+        "ccna-v2:2.2.c"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "VLAN Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 1000) — Configuring VLAN Trunks",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "vlan",
+        "access-port",
+        "voice-vlan",
+        "ios"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "voice",
+          "prompt": "Su una porta con `switchport access vlan 10` e `switchport voice vlan 30` sono collegati un telefono IP e, dietro, un PC. Come viaggia il traffico di ciascuno?",
+          "answer": "Il telefono invia il traffico voce con tag 802.1Q della VLAN 30. Il PC, collegato alla porta switch del telefono, invia frame senza tag che lo switch assegna alla VLAN dati 10. Sulla stessa porta fisica convivono quindi due VLAN, ma la porta resta una Access Port.",
+          "keyPoints": [
+            "Voce: con tag, VLAN 30",
+            "Dati: senza tag, VLAN 10",
+            "La porta non diventa un trunk"
+          ],
+          "commonMistakes": [
+            "Pensare che serva un trunk per collegare un telefono IP",
+            "Configurare il PC con il tag della VLAN dati"
+          ]
+        },
+        {
+          "key": "show-vlan",
+          "prompt": "Hai configurato Gi1/0/24 come trunk ma non la vedi in `show vlan brief`. È un problema?",
+          "answer": "No. `show vlan brief` elenca le VLAN e le Access Port assegnate a ciascuna. Le porte trunk non compaiono: si verificano con `show interfaces trunk`.",
+          "keyPoints": [
+            "show vlan brief = Access Port",
+            "show interfaces trunk = trunk"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "vlan-concept",
+        "trunk-8021q"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "trunk-8021q",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Trunk 802.1Q: come più VLAN condividono un link",
+      "summary": "Un trunk trasporta il traffico di più VLAN sullo stesso collegamento aggiungendo a ogni frame un tag 802.1Q di 4 byte. La Native VLAN viaggia senza tag.",
+      "body": "Tra due switch, o tra uno switch e un router, servirebbe un cavo per ogni VLAN. Il **trunk** risolve il problema: un solo link trasporta più VLAN, e ogni frame indica la propria VLAN con un **tag 802.1Q**.\n\n### Il tag\nIl tag di 4 byte viene inserito tra il MAC address di origine e il campo Type:\n- **TPID** (16 bit) = `0x8100`, indica che il frame è taggato;\n- **PCP** (3 bit), priorità per la QoS di livello 2;\n- **DEI** (1 bit);\n- **VID** (12 bit), il numero di VLAN: valori utilizzabili da 1 a 4094.\n\nPoiché il frame cambia, lo switch ricalcola l'FCS quando aggiunge o toglie il tag.\n\n### Native VLAN\nI frame della **Native VLAN** attraversano il trunk **senza tag**; chi li riceve senza tag li assegna alla propria Native VLAN. Per default la Native VLAN è la **VLAN 1**, e deve essere la stessa ai due capi del link.\n\n### Configurazione\n```\nSW1(config)# interface gigabitEthernet1/0/24\nSW1(config-if)# switchport trunk encapsulation dot1q   ! solo sugli switch che supportano anche ISL\nSW1(config-if)# switchport mode trunk\nSW1(config-if)# switchport trunk native vlan 99\nSW1(config-if)# switchport trunk allowed vlan 10,20,30,99\n```\nPer default un trunk consente **tutte le VLAN da 1 a 4094**. Limitare l'elenco con `allowed vlan` riduce il flooding inutile e la superficie d'attacco.",
+      "trackId": "ccna",
+      "topicId": "vlan-trunking",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlans"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:2.1",
+        "ccna-v2:2.1.b"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "VLAN Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 1000) — Configuring VLAN Trunks",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "trunk",
+        "802-1q",
+        "native-vlan"
+      ],
+      "diagrams": [
+        {
+          "id": "dot1q-frame",
+          "caption": "Il tag 802.1Q si inserisce dopo il MAC address di origine."
+        }
+      ],
+      "recall": [
+        {
+          "key": "tag",
+          "prompt": "Descrivi il tag 802.1Q: dove si trova nel frame, quanto è lungo e quale campo identifica la VLAN?",
+          "answer": "È lungo 4 byte e si inserisce tra il MAC address di origine e il campo Type. Contiene il TPID (0x8100), il PCP per la priorità, il bit DEI e il VID di 12 bit che indica la VLAN (1–4094). Inserire o togliere il tag modifica il frame, quindi l'FCS va ricalcolato.",
+          "keyPoints": [
+            "4 byte dopo il MAC di origine",
+            "TPID 0x8100",
+            "VID 12 bit, VLAN 1–4094",
+            "FCS ricalcolato"
+          ],
+          "commonMistakes": [
+            "Pensare che il tag venga aggiunto anche sulle Access Port",
+            "Collocare il tag prima del MAC di destinazione"
+          ]
+        },
+        {
+          "key": "native",
+          "prompt": "Cosa succede a un frame della Native VLAN quando attraversa un trunk 802.1Q?",
+          "answer": "Viene inviato senza tag. Lo switch che lo riceve senza tag lo assegna alla propria Native VLAN. Per questo la Native VLAN deve coincidere ai due capi del trunk.",
+          "keyPoints": [
+            "Native VLAN = senza tag",
+            "Default VLAN 1",
+            "Deve coincidere ai due lati"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dtp-modes",
+        "native-vlan-mismatch",
+        "access-port-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dtp-modes",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "DTP: quando due porte formano un trunk",
+      "summary": "Le modalità access, trunk, dynamic auto e dynamic desirable decidono se un link diventa trunk. Due porte in dynamic auto restano access.",
+      "body": "**DTP** (Dynamic Trunking Protocol) è un protocollo Cisco che negozia se un link tra switch deve diventare un trunk.\n\n| Modalità | Comportamento |\n|---|---|\n| `access` | Mai trunk. |\n| `trunk` | Trunk incondizionato; invia comunque messaggi DTP. |\n| `dynamic desirable` | Cerca attivamente di formare un trunk. |\n| `dynamic auto` | Diventa trunk solo se l'altro lato è `trunk` o `desirable`. |\n| `nonegotiate` | Disattiva i messaggi DTP (si usa insieme a `trunk` o `access`). |\n\n### Risultato tra due porte\n| | trunk | desirable | auto | access |\n|---|---|---|---|---|\n| **trunk** | trunk | trunk | trunk | non funziona |\n| **desirable** | trunk | trunk | trunk | access |\n| **auto** | trunk | trunk | **access** | access |\n| **access** | non funziona | access | access | access |\n\n`trunk` contro `access` produce una configurazione incoerente: un lato tagga, l'altro no, e il traffico non funziona correttamente.\n\n### Nella pratica\nLa modalità dinamica di default varia in base al modello di switch. In produzione si configurano i link in modo **esplicito**: `switchport mode trunk` (con `switchport nonegotiate`) tra switch e `switchport mode access` verso gli host. Una porta utente lasciata in modalità dinamica potrebbe negoziare un trunk con un dispositivo che finge di essere uno switch.",
+      "trackId": "ccna",
+      "topicId": "vlan-trunking",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlans"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.1.b"
+      ],
+      "sources": [
+        {
+          "title": "VLAN Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 1000) — Configuring VLAN Trunks",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dtp",
+        "trunk",
+        "sicurezza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "auto-auto",
+          "prompt": "Due switch sono collegati con entrambe le porte in `dynamic auto`. Si forma un trunk? Perché?",
+          "answer": "No, il link resta in modalità access. Una porta dynamic auto diventa trunk solo se l'altro lato chiede attivamente il trunk, cioè è in modalità trunk o dynamic desirable. Due porte auto aspettano entrambe e nessuna avvia la negoziazione.",
+          "keyPoints": [
+            "auto è passiva",
+            "Serve almeno un lato trunk o desirable"
+          ],
+          "commonMistakes": [
+            "Pensare che due porte dinamiche formino sempre un trunk"
+          ]
+        }
+      ],
+      "related": [
+        "trunk-8021q",
+        "native-vlan-mismatch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "native-vlan-mismatch",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: gli host della VLAN 99 vedono traffico della VLAN 1",
+      "summary": "Un trunk con Native VLAN diverse ai due lati unisce due VLAN senza che il link cada. Come riconoscerlo e correggerlo.",
+      "body": "### Sintomi\n- Il trunk tra SW1 e SW2 è attivo e le VLAN 10 e 20 funzionano.\n- Un host della VLAN 99 su SW2 riceve broadcast che provengono dalla VLAN 1 di SW1.\n- Sulla console compare un messaggio CDP di *native VLAN mismatch*.\n\n### Verifica\n```\nSW1# show interfaces trunk\nPort        Mode         Encapsulation  Status        Native vlan\nGi1/0/24    on           802.1q         trunking      1\n\nSW2# show interfaces trunk\nPort        Mode         Encapsulation  Status        Native vlan\nGi1/0/24    on           802.1q         trunking      99\n```\n\n### Causa\nI frame della Native VLAN attraversano il trunk **senza tag**. SW1 invia senza tag il traffico della VLAN 1; SW2 lo riceve senza tag e lo assegna alla **sua** Native VLAN, la 99. Le due VLAN si fondono in un unico Broadcast Domain e gli host possono finire nella subnet sbagliata.\n\n### Correzione\nAllineare la Native VLAN su entrambi i lati, di preferenza una VLAN dedicata e inutilizzata:\n```\nSW1(config)# interface gigabitEthernet1/0/24\nSW1(config-if)# switchport trunk native vlan 99\n```\n\n### Perché conta\nIl link non cade: il problema è silenzioso e si manifesta come indirizzi DHCP della subnet sbagliata o host irraggiungibili. Usare una Native VLAN dedicata riduce anche il rischio degli attacchi di *VLAN hopping* basati sul doppio tag.",
+      "trackId": "ccna",
+      "topicId": "vlan-trunking",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlan-trunking"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:2.1.b",
+        "ccna-v2:2.4"
+      ],
+      "sources": [
+        {
+          "title": "VLAN Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 1000) — Configuring VLAN Trunks",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan_trunks.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 3560 Configuration Guide 15.0(2)SE — Configuring CDP",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3560/software/release/15-0_2_se/configuration/guide/scg3560/swcdp.html"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "trunk",
+        "native-vlan",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "diagnose",
+          "prompt": "Quale comando usi per confrontare la Native VLAN ai due capi di un trunk, e che cosa succede al traffico se non coincidono?",
+          "answer": "`show interfaces trunk` su entrambi gli switch, colonna Native vlan. Se non coincidono, il traffico non taggato inviato da un lato viene assegnato a una VLAN diversa dall'altro lato: le due Native VLAN si fondono, mentre il trunk resta attivo.",
+          "keyPoints": [
+            "show interfaces trunk",
+            "Traffico non taggato cambia VLAN",
+            "Il link resta su"
+          ],
+          "commonMistakes": [
+            "Aspettarsi che il trunk vada in down"
+          ]
+        }
+      ],
+      "related": [
+        "trunk-8021q",
+        "dtp-modes"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "router-on-a-stick",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Router-on-a-stick: routing tra VLAN con sotto-interfacce",
+      "summary": "Un router collegato a un trunk usa una sotto-interfaccia per VLAN, ognuna con il proprio tag e il proprio Default Gateway.",
+      "body": "Gli host di VLAN diverse stanno in subnet diverse: per comunicare serve un dispositivo di livello 3. Con **router-on-a-stick** (ROAS) un solo link fisico tra switch e router trasporta tutte le VLAN, e il router crea una **sotto-interfaccia** per ciascuna.\n\n```\nSW1(config)# interface gigabitEthernet1/0/1\nSW1(config-if)# switchport mode trunk\nSW1(config-if)# switchport trunk allowed vlan 10,20\n\nR1(config)# interface gigabitEthernet0/0\nR1(config-if)# no shutdown\nR1(config-if)# interface gigabitEthernet0/0.10\nR1(config-subif)# encapsulation dot1q 10\nR1(config-subif)# ip address 192.168.10.1 255.255.255.0\nR1(config-subif)# interface gigabitEthernet0/0.20\nR1(config-subif)# encapsulation dot1q 20\nR1(config-subif)# ip address 192.168.20.1 255.255.255.0\n```\n\n- Il numero dopo il punto è solo un identificativo locale; per chiarezza si usa lo stesso numero della VLAN.\n- `encapsulation dot1q 10` collega la sotto-interfaccia al tag della VLAN 10. Per la Native VLAN si aggiunge la parola chiave `native`, oppure si configura l'indirizzo sull'interfaccia fisica.\n- L'interfaccia fisica deve essere attiva (`no shutdown`); le sotto-interfacce ne seguono lo stato.\n- Gli host usano come Default Gateway l'indirizzo della sotto-interfaccia della propria VLAN.\n\n### Limite\nTutto il traffico tra VLAN sale e scende sullo stesso link: con molto traffico il collegamento diventa un collo di bottiglia. Nelle reti più grandi si usano le **SVI** su uno switch multilayer.",
+      "trackId": "ccna",
+      "topicId": "inter-vlan-routing",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlan-trunking",
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:2.1.a",
+        "ccna-v2:2.1.b"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "inter-vlan",
+        "roas",
+        "sotto-interfacce"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "subif",
+          "prompt": "Quali due comandi servono su una sotto-interfaccia ROAS per la VLAN 20, e cosa fa ciascuno?",
+          "answer": "`encapsulation dot1q 20` associa la sotto-interfaccia ai frame con tag VLAN 20 (in ricezione li accetta, in trasmissione li tagga con 20). `ip address 192.168.20.1 255.255.255.0` assegna l'indirizzo che fa da Default Gateway per gli host della VLAN 20.",
+          "keyPoints": [
+            "encapsulation dot1q <vlan>",
+            "IP = Default Gateway della VLAN"
+          ],
+          "commonMistakes": [
+            "Pensare che il numero della sotto-interfaccia determini la VLAN"
+          ]
+        }
+      ],
+      "related": [
+        "svi-inter-vlan",
+        "trunk-8021q"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "svi-inter-vlan",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "SVI: routing tra VLAN su uno switch multilayer",
+      "summary": "Una Switch Virtual Interface è un'interfaccia di livello 3 associata a una VLAN. Su uno switch multilayer sostituisce il router-on-a-stick.",
+      "body": "Una **SVI** (Switch Virtual Interface) è un'interfaccia virtuale di livello 3 che rappresenta una VLAN all'interno dello switch. Su uno switch multilayer le SVI fanno da Default Gateway per le VLAN e il routing avviene in hardware, senza un link verso un router esterno.\n\n```\nSW1(config)# ip routing\nSW1(config)# interface vlan 10\nSW1(config-if)# ip address 192.168.10.1 255.255.255.0\nSW1(config-if)# no shutdown\nSW1(config-if)# interface vlan 20\nSW1(config-if)# ip address 192.168.20.1 255.255.255.0\nSW1(config-if)# no shutdown\n```\n\n### Quando una SVI è up/up\nUna SVI è attiva solo se:\n1. la VLAN **esiste** nel database dello switch;\n2. almeno una porta della VLAN (Access Port o trunk che la trasporta) è attiva e in **forwarding** per lo Spanning Tree;\n3. la SVI non è in `shutdown` (le SVI create vengono spente per default).\n\nSenza `ip routing` lo switch non instrada tra le SVI: ogni SVI resta raggiungibile, ma il traffico tra VLAN non passa.\n\n### Porte routed\nSu uno switch multilayer si può anche trasformare una porta fisica in interfaccia di livello 3 con `no switchport`, ad esempio per il link verso un router o un firewall.",
+      "trackId": "ccna",
+      "topicId": "inter-vlan-routing",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlans",
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.1.a",
+        "ccna-v2:2.1.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "svi",
+        "multilayer",
+        "inter-vlan"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "down",
+          "prompt": "Hai creato `interface vlan 30` con un indirizzo IP, ma la SVI resta down/down. Quali cause controlli?",
+          "answer": "Che la VLAN 30 esista nel database (show vlan brief); che almeno una porta della VLAN 30 sia attiva e in forwarding, come Access Port o su un trunk che consente la VLAN 30; che la SVI non sia in shutdown. Per il routing tra VLAN serve inoltre `ip routing`.",
+          "keyPoints": [
+            "VLAN esistente",
+            "Almeno una porta attiva nella VLAN",
+            "no shutdown",
+            "ip routing per instradare"
+          ],
+          "commonMistakes": [
+            "Cercare il problema nell'indirizzo IP, che non influisce sullo stato up/down"
+          ]
+        }
+      ],
+      "related": [
+        "router-on-a-stick",
+        "vlan-concept"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "stp-why",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Perché serve lo Spanning Tree",
+      "summary": "I link ridondanti tra switch creano loop di livello 2: i frame Ethernet non hanno TTL e girano all'infinito. STP blocca le porte necessarie a rompere il loop.",
+      "body": "La ridondanza è indispensabile: se un link cade, la rete deve continuare a funzionare. Ma tra switch due percorsi alternativi formano un **loop di livello 2**, e Ethernet non ha alcun meccanismo per gestirlo.\n\n### Cosa succede senza STP\n- **Broadcast storm**: un broadcast viene inoltrato in flooding su tutte le porte, torna indietro dall'altro percorso e viene inoltrato di nuovo. L'header Ethernet non ha un campo **TTL** come IP, quindi il frame non scade mai e i frame si moltiplicano fino a saturare i link.\n- **Instabilità della MAC Address Table**: lo stesso MAC address di origine arriva alternativamente da porte diverse e lo switch continua ad aggiornare la tabella (*MAC flapping*).\n- **Frame duplicati**: lo stesso frame unicast arriva più volte alla destinazione.\n\n### Cosa fa lo Spanning Tree\nLo **Spanning Tree Protocol** elegge un **Root Bridge** e, per ogni segmento, sceglie un unico percorso verso di esso. Le porte che creerebbero un loop vengono messe in stato **blocking** (o *discarding* in RSTP): non inoltrano traffico utente ma continuano ad ascoltare le **BPDU**. Se un link attivo cade, una porta bloccata può passare in forwarding.\n\nGli switch Cisco eseguono per default una variante **per VLAN**: PVST+ o, sugli switch recenti e all'esame, **Rapid PVST+**. Ogni VLAN ha una propria istanza di Spanning Tree e può avere un Root Bridge diverso.",
+      "trackId": "ccna",
+      "topicId": "stp",
+      "difficulty": 1,
+      "prerequisites": [
+        "switching-fundamentals"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.5"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 2960 Software Configuration Guide 15.2(2)E — Configuring Optional Spanning-Tree Features",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_2_e/configuration/guide/b_1522e_2960_2960c_2960s_2960sf_2960p_cg/b_1522e_2960_2960c_2960s_2960sf_2960p_cg_chapter_010010.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "stp",
+        "loop",
+        "broadcast-storm"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ttl",
+          "prompt": "Perché un loop di livello 2 è molto più grave di un loop di routing IP?",
+          "answer": "Perché l'header Ethernet non ha un campo TTL. Un pacchetto IP in loop viene scartato quando il TTL arriva a zero; un frame Ethernet in loop, soprattutto se broadcast, viene inoltrato all'infinito e duplicato dal flooding, fino a saturare la rete (broadcast storm).",
+          "keyPoints": [
+            "Nessun TTL in Ethernet",
+            "Flooding moltiplica i frame",
+            "Broadcast storm, MAC flapping"
+          ],
+          "commonMistakes": [
+            "Pensare che gli switch riconoscano e scartino i frame già visti"
+          ]
+        }
+      ],
+      "related": [
+        "stp-root-election",
+        "rstp-roles-states",
+        "switch-mac-learning"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "stp-root-election",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Elezione del Root Bridge e scelta delle porte",
+      "summary": "Il Bridge ID più basso diventa Root Bridge. Poi ogni switch sceglie la propria Root Port e ogni segmento una Designated Port; le altre porte vengono bloccate.",
+      "body": "### 1. Root Bridge\nOgni switch ha un **Bridge ID** (BID) = priorità (default **32768**) + **VLAN ID** (*extended system ID*) + MAC address. Vince il **BID più basso**: prima si confronta la priorità, a parità il MAC address più basso. Per questo, in una VLAN 10 con priorità di default, il BID mostrato è 32778.\n\nLa priorità si configura in multipli di **4096**:\n```\nSW1(config)# spanning-tree vlan 10 root primary     ! oppure: spanning-tree vlan 10 priority 24576\nSW2(config)# spanning-tree vlan 10 root secondary\n```\nTutte le porte del Root Bridge sono Designated Port.\n\n### 2. Root Port (una per ogni switch non root)\nÈ la porta con il **costo di percorso più basso** verso il Root Bridge. A parità: BID del vicino più basso, poi Port ID del vicino più basso (priorità di porta, default 128, + numero di porta).\n\nCosti di default (metodo *short*): 10 Mbps = 100, 100 Mbps = 19, 1 Gbps = 4, 10 Gbps = 2.\n\n### 3. Designated Port (una per ogni segmento)\nSu ogni collegamento, la porta dello switch con il costo più basso verso il Root Bridge diventa Designated Port. A parità, vince lo switch con BID più basso.\n\n### 4. Tutte le altre\nLe porte che non sono né Root né Designated vengono bloccate (in RSTP: ruolo **Alternate** o **Backup**, stato discarding).",
+      "trackId": "ccna",
+      "topicId": "stp",
+      "difficulty": 2,
+      "prerequisites": [
+        "stp"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:2.5",
+        "ccna-v2:2.5.a"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "stp",
+        "root-bridge",
+        "bridge-id"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "election",
+          "prompt": "SW1 ha priorità 32768 e MAC 0011.1111.1111, SW2 priorità 28672 e MAC 0000.0000.0001, SW3 priorità 28672 e MAC 0000.0000.0002. Chi diventa Root Bridge e perché?",
+          "answer": "SW2. Si confronta prima la priorità: SW2 e SW3 hanno 28672, inferiore a 32768 di SW1. A parità di priorità decide il MAC address più basso, e quello di SW2 (0000.0000.0001) è inferiore a quello di SW3.",
+          "keyPoints": [
+            "Prima la priorità",
+            "Poi il MAC address più basso",
+            "Vince il BID più basso"
+          ],
+          "commonMistakes": [
+            "Scegliere SW1 perché ha il MAC più basso senza guardare la priorità",
+            "Pensare che vinca il valore più alto"
+          ]
+        },
+        {
+          "key": "cost",
+          "prompt": "Uno switch raggiunge il Root Bridge in due modi: dalla porta Gi0/1, con un link diretto a 100 Mbps, oppure dalla porta Gi0/2, attraverso un altro switch con due link da 1 Gbps. Quale diventa Root Port?",
+          "answer": "Gi0/2. Il percorso diretto a 100 Mbps costa 19. Il percorso attraverso l'altro switch costa 4 + 4 = 8. Vince il costo totale più basso verso il Root Bridge, non il numero di salti.",
+          "keyPoints": [
+            "Si sommano i costi dei link fino al root",
+            "100 Mbps = 19, 1 Gbps = 4",
+            "Conta il costo, non i salti"
+          ],
+          "commonMistakes": [
+            "Scegliere il percorso diretto perché ha meno salti"
+          ]
+        }
+      ],
+      "related": [
+        "stp-why",
+        "rstp-roles-states"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "rstp-roles-states",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Rapid PVST+: ruoli e stati delle porte",
+      "summary": "RSTP separa il ruolo di una porta (Root, Designated, Alternate, Backup) dal suo stato (Discarding, Learning, Forwarding) e converge in pochi secondi.",
+      "body": "Lo STP classico (802.1D) impiega fino a 30–50 secondi per portare una porta in forwarding. **RSTP** (802.1w, oggi integrato in 802.1Q) converge molto più in fretta grazie a nuovi ruoli e a una negoziazione diretta tra switch vicini. **Rapid PVST+** è la versione Cisco per VLAN di RSTP.\n\n### Ruoli\n| Ruolo | Significato |\n|---|---|\n| **Root** | La porta migliore verso il Root Bridge (una per switch non root). |\n| **Designated** | La porta che inoltra su un segmento verso il lato opposto al root. |\n| **Alternate** | Percorso alternativo verso il root, ricevuto da un **altro switch**. Pronta a diventare Root Port se quella attuale cade. |\n| **Backup** | Percorso di riserva verso un segmento su cui lo **stesso switch** ha già una Designated Port (raro: richiede un hub condiviso). |\n\n### Stati\n| STP classico | RSTP | Inoltra dati? | Apprende MAC? |\n|---|---|---|---|\n| Disabled, Blocking, Listening | **Discarding** | no | no |\n| Learning | **Learning** | no | sì |\n| Forwarding | **Forwarding** | sì | sì |\n\n### Tipi di link\n- **Point-to-point**: link full-duplex tra switch; la negoziazione proposal/agreement porta subito in forwarding.\n- **Shared**: link half-duplex (hub); RSTP torna ai timer classici.\n- **Edge**: porta verso un host, equivalente a PortFast; passa subito in forwarding.\n\nAttivazione: `spanning-tree mode rapid-pvst`.",
+      "trackId": "ccna",
+      "topicId": "stp",
+      "difficulty": 2,
+      "prerequisites": [
+        "stp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:2.5",
+        "ccna-v2:2.5.b"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "Catalyst 2960 Software Configuration Guide 15.2(2)E — Configuring Optional Spanning-Tree Features",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_2_e/configuration/guide/b_1522e_2960_2960c_2960s_2960sf_2960p_cg/b_1522e_2960_2960c_2960s_2960sf_2960p_cg_chapter_010010.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "rstp",
+        "rapid-pvst",
+        "stp"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "alternate",
+          "prompt": "Che differenza c'è tra una porta Alternate e una porta Backup in RSTP?",
+          "answer": "Entrambe sono in stato discarding e pronte a subentrare. La Alternate riceve BPDU migliori da un altro switch e offre un percorso alternativo verso il Root Bridge: sostituisce la Root Port. La Backup riceve BPDU migliori dallo stesso switch (un'altra sua porta sullo stesso segmento condiviso) e fa da riserva a una Designated Port.",
+          "keyPoints": [
+            "Alternate: BPDU da un altro switch, riserva della Root Port",
+            "Backup: BPDU dallo stesso switch, riserva della Designated Port"
+          ],
+          "commonMistakes": [
+            "Pensare che Alternate e Backup siano sinonimi"
+          ]
+        },
+        {
+          "key": "states",
+          "prompt": "Quali sono i tre stati RSTP e quali corrispondono agli stati dello STP classico?",
+          "answer": "Discarding (raggruppa Disabled, Blocking e Listening: non inoltra e non apprende), Learning (non inoltra ma apprende i MAC address) e Forwarding (inoltra e apprende).",
+          "keyPoints": [
+            "Discarding = disabled + blocking + listening",
+            "Learning",
+            "Forwarding"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "stp-root-election",
+        "portfast-bpduguard"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "portfast-bpduguard",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "PortFast e BPDU Guard sulle porte verso gli host",
+      "summary": "PortFast porta subito in forwarding le porte verso PC e server. BPDU Guard le disattiva se ricevono una BPDU, cioè se qualcuno collega uno switch.",
+      "body": "Su una porta verso un PC, attendere gli stati intermedi dello Spanning Tree è inutile: l'host non crea loop. Il ritardo può però far fallire la richiesta DHCP all'avvio.\n\n### PortFast\n**PortFast** porta l'interfaccia direttamente in forwarding, saltando listening e learning.\n```\nSW1(config)# interface gigabitEthernet1/0/5\nSW1(config-if)# spanning-tree portfast\n! oppure, per tutte le Access Port:\nSW1(config)# spanning-tree portfast default\n```\nVa usato **solo** verso host, server o router: su un link verso un altro switch può creare un loop temporaneo.\n\n### BPDU Guard\nSe su una porta PortFast arriva una BPDU, significa che è stato collegato uno switch. **BPDU Guard** mette la porta in stato **error-disabled**.\n```\nSW1(config-if)# spanning-tree bpduguard enable\n! oppure, per tutte le porte PortFast:\nSW1(config)# spanning-tree portfast bpduguard default\n```\n\n### Ripristino di una porta err-disabled\n```\nSW1# show interfaces status err-disabled\nSW1(config)# interface gigabitEthernet1/0/5\nSW1(config-if)# shutdown\nSW1(config-if)# no shutdown\n```\nSi può anche configurare il ripristino automatico con `errdisable recovery cause bpduguard`. Prima di riattivare la porta, va rimosso lo switch non autorizzato.",
+      "trackId": "ccna",
+      "topicId": "stp",
+      "difficulty": 1,
+      "prerequisites": [
+        "stp"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.5.c",
+        "ccna-v2:2.5.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 2960 Software Configuration Guide 15.2(2)E — Configuring Optional Spanning-Tree Features",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_2_e/configuration/guide/b_1522e_2960_2960c_2960s_2960sf_2960p_cg/b_1522e_2960_2960c_2960s_2960sf_2960p_cg_chapter_010010.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "portfast",
+        "bpdu-guard",
+        "err-disabled"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "why",
+          "prompt": "Perché PortFast e BPDU Guard si configurano quasi sempre insieme?",
+          "answer": "PortFast rende subito attiva una porta verso un host, ma se qualcuno vi collega uno switch quel link entra in forwarding senza la protezione dello Spanning Tree e può creare un loop. BPDU Guard copre proprio questo caso: alla prima BPDU ricevuta la porta va in err-disabled.",
+          "keyPoints": [
+            "PortFast: forwarding immediato",
+            "Rischio: switch collegato a una porta PortFast",
+            "BPDU Guard: err-disabled alla prima BPDU"
+          ],
+          "commonMistakes": [
+            "Pensare che PortFast disattivi lo Spanning Tree sulla porta"
+          ]
+        },
+        {
+          "key": "recover",
+          "prompt": "Una porta è in err-disabled per BPDU Guard. Come la riattivi manualmente?",
+          "answer": "Si verifica con `show interfaces status err-disabled`, si rimuove la causa (lo switch collegato), poi sull'interfaccia si esegue `shutdown` seguito da `no shutdown`. In alternativa si configura `errdisable recovery cause bpduguard`.",
+          "keyPoints": [
+            "shutdown / no shutdown",
+            "Rimuovere prima la causa"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "root-loop-guard",
+        "rstp-roles-states"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "root-loop-guard",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Root Guard e Loop Guard: due protezioni diverse",
+      "summary": "Root Guard impedisce a uno switch esterno di diventare Root Bridge. Loop Guard impedisce a una porta bloccata di passare in forwarding quando smette di ricevere BPDU.",
+      "body": "| | Root Guard | Loop Guard |\n|---|---|---|\n| Problema | Uno switch collegato al bordo con priorità più bassa si prende il ruolo di Root Bridge | Una porta non riceve più BPDU (es. guasto unidirezionale) e passa in forwarding, creando un loop |\n| Dove si configura | Porte Designated verso il bordo della rete o verso switch non controllati | Porte Root e Alternate, cioè quelle che ricevono BPDU |\n| Cosa fa | Se riceve una BPDU superiore, la porta passa in stato **root-inconsistent** (bloccata) | Se le BPDU smettono di arrivare, la porta viene bloccata invece di diventare Designated |\n| Ripristino | Automatico quando cessano le BPDU superiori | Automatico quando le BPDU tornano |\n| Comando | `spanning-tree guard root` | `spanning-tree guard loop` |\n\n### BPDU Guard, per confronto\n**BPDU Guard** reagisce a **qualsiasi** BPDU e mette la porta in err-disabled; si usa sulle porte verso gli host. Root Guard accetta le BPDU normali e reagisce solo a quelle **superiori**.\n\n### Esempio di uso\nIn un'azienda con switch di distribuzione gestiti dal team di rete e switch di accesso in un'area affidata a terzi, Root Guard sulle porte dei distribution switch verso quell'area impedisce che un errore di configurazione sposti il Root Bridge e cambi il percorso di tutto il traffico.",
+      "trackId": "ccna",
+      "topicId": "stp",
+      "difficulty": 3,
+      "prerequisites": [
+        "stp"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.5.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 2960 Software Configuration Guide 15.2(2)E — Configuring Optional Spanning-Tree Features",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_2_e/configuration/guide/b_1522e_2960_2960c_2960s_2960sf_2960p_cg/b_1522e_2960_2960c_2960s_2960sf_2960p_cg_chapter_010010.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "root-guard",
+        "loop-guard",
+        "stp"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "which",
+          "prompt": "Una porta riceve una BPDU con un Bridge ID migliore di quello del Root Bridge attuale. Con Root Guard attivo cosa succede? E con BPDU Guard?",
+          "answer": "Con Root Guard la porta passa in stato root-inconsistent (bloccata) finché arrivano BPDU superiori, poi torna attiva da sola: il Root Bridge resta quello previsto. Con BPDU Guard la porta va in err-disabled alla prima BPDU di qualsiasi tipo e va riattivata manualmente o con errdisable recovery.",
+          "keyPoints": [
+            "Root Guard: root-inconsistent, ripristino automatico",
+            "BPDU Guard: err-disabled per qualsiasi BPDU"
+          ],
+          "commonMistakes": [
+            "Confondere root-inconsistent con err-disabled"
+          ]
+        }
+      ],
+      "related": [
+        "portfast-bpduguard",
+        "stp-root-election"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "etherchannel-lacp",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "EtherChannel con LACP",
+      "summary": "EtherChannel unisce più link fisici in un'unica interfaccia logica: più banda, ridondanza e nessuna porta bloccata dallo Spanning Tree.",
+      "body": "Con due link tra gli stessi switch, lo Spanning Tree ne blocca uno. **EtherChannel** li raggruppa in un'unica interfaccia logica, il **Port-channel**: lo Spanning Tree vede un solo link e il traffico viene distribuito su tutti i membri.\n\n### Modalità\n| Protocollo | Modalità | Si forma con |\n|---|---|---|\n| **LACP** (standard IEEE) | `active` | active, passive |\n| | `passive` | solo active |\n| **PAgP** (Cisco) | `desirable` | desirable, auto |\n| | `auto` | solo desirable |\n| Statico | `on` | solo on |\n\nDue lati `passive` (o due `auto`) non formano il canale. `on` non negozia nulla: si usa solo se entrambi i lati sono `on`.\n\n### Configurazione\n```\nSW1(config)# interface range gigabitEthernet1/0/1 - 2\nSW1(config-if-range)# channel-group 1 mode active\nSW1(config-if-range)# exit\nSW1(config)# interface port-channel 1\nSW1(config-if)# switchport mode trunk\n```\n\n### Requisiti\nLe porte membro devono avere la stessa configurazione: **speed e duplex**, modalità access o trunk, **VLAN di accesso** oppure **Native VLAN** e VLAN consentite. LACP permette fino a **8 porte attive** per canale. Il bilanciamento avviene per flusso, in base a un hash di indirizzi MAC o IP: un singolo flusso usa un solo link.\n\n### Verifica\n```\nSW1# show etherchannel summary\n```\nIl flag **P** indica una porta inserita nel canale, **SU** un Port-channel di livello 2 attivo.",
+      "trackId": "ccna",
+      "topicId": "etherchannel",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlan-trunking",
+        "stp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:2.1.c"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "EtherChannel Configuration Guide, Cisco IOS XE 17 (Catalyst 9000)",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/c9000/lyr2-fwd/etherchannel/etherchannel-configuration-guide/m_ethernetchannel.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IEEE 802.1AX — Link Aggregation",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "etherchannel",
+        "lacp",
+        "port-channel"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "modes",
+          "prompt": "SW1 ha le porte in `channel-group 1 mode passive`, SW2 in `mode passive`. Si forma il Port-channel? Cosa cambieresti?",
+          "answer": "No. In passive una porta risponde ai messaggi LACP ma non li avvia: con due lati passive nessuno inizia la negoziazione. Basta mettere almeno un lato in active (di solito entrambi).",
+          "keyPoints": [
+            "passive non avvia LACP",
+            "Serve almeno un lato active"
+          ],
+          "commonMistakes": [
+            "Pensare che passive + passive funzioni perché entrambi usano LACP"
+          ]
+        },
+        {
+          "key": "hash",
+          "prompt": "Un EtherChannel ha 4 link da 1 Gbps. Un unico trasferimento di file tra due server può raggiungere 4 Gbps?",
+          "answer": "No. Il bilanciamento è per flusso: un hash su indirizzi MAC/IP (e a volte porte) sceglie un solo link per ogni flusso, quindi un singolo trasferimento resta limitato a 1 Gbps. La banda aggregata si sfrutta con molti flussi diversi.",
+          "keyPoints": [
+            "Bilanciamento per flusso, non per frame",
+            "Un flusso = un link"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "etherchannel-troubleshooting",
+        "stp-why"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "etherchannel-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: un membro dell'EtherChannel resta sospeso",
+      "summary": "Su quattro porte configurate, tre sono nel canale e una appare con il flag s. Il motivo è quasi sempre una configurazione diversa dalle altre.",
+      "body": "### Sintomo\n```\nSW1# show etherchannel summary\nGroup  Port-channel  Protocol    Ports\n------+-------------+-----------+------------------------------------\n1      Po1(SU)         LACP      Gi1/0/1(P)  Gi1/0/2(P)  Gi1/0/3(P)  Gi1/0/4(s)\n```\nGi1/0/4 è **sospesa** (`s`): non trasporta traffico.\n\n### Ipotesi da verificare, in ordine\n1. **Configurazione della porta diversa** dalle altre: `show running-config interface gi1/0/4`. Basta una VLAN consentita in più o in meno, una Native VLAN diversa o la porta lasciata in access mentre il canale è trunk.\n2. **Speed o duplex diversi**: `show interfaces gi1/0/4 status`.\n3. **Dall'altra parte** la porta corrispondente non è nel gruppo o è collegata a un altro switch (verificabile con CDP o LLDP).\n\n### Correzione\nLa configurazione si modifica sull'interfaccia `port-channel`, che la propaga ai membri. Per riallineare una porta rimasta indietro conviene rimuoverla dal gruppo, riportarla alla configurazione standard e reinserirla:\n```\nSW1(config)# default interface gigabitEthernet1/0/4\nSW1(config)# interface gigabitEthernet1/0/4\nSW1(config-if)# channel-group 1 mode active\n```\n\n### Da ricordare\nIl canale non segnala un errore evidente: continua a funzionare con meno banda e meno ridondanza. Controllare `show etherchannel summary` dopo ogni modifica.",
+      "trackId": "ccna",
+      "topicId": "etherchannel",
+      "difficulty": 2,
+      "prerequisites": [
+        "etherchannel"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.1.c",
+        "ccna-v2:2.4"
+      ],
+      "sources": [
+        {
+          "title": "EtherChannel Configuration Guide, Cisco IOS XE 17 (Catalyst 9000)",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/c9000/lyr2-fwd/etherchannel/etherchannel-configuration-guide/m_ethernetchannel.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "etherchannel",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "suspended",
+          "prompt": "Un membro di EtherChannel appare con il flag `s`. Quali sono le cause più probabili?",
+          "answer": "La porta è sospesa perché non è compatibile con le altre del canale: configurazione diversa (modalità access/trunk, VLAN di accesso, Native VLAN, VLAN consentite) oppure speed/duplex diversi. Va confrontata con gli altri membri e riallineata.",
+          "keyPoints": [
+            "Configurazione non identica",
+            "Speed/duplex diversi",
+            "Controllare anche il lato remoto"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "etherchannel-lacp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "cdp-lldp",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "CDP e LLDP: verificare la documentazione di rete",
+      "summary": "CDP (Cisco) e LLDP (IEEE 802.1AB) annunciano ai vicini diretti nome, modello e porta. Servono a controllare che lo schema di rete corrisponda alla realtà.",
+      "body": "Lo schema dice che Gi1/0/48 di SW1 va al router R1. È vero? **CDP** e **LLDP** lo dicono in pochi secondi: ogni dispositivo annuncia ai **vicini direttamente collegati** chi è e da quale porta trasmette.\n\n| | CDP | LLDP |\n|---|---|---|\n| Standard | Proprietario Cisco | IEEE 802.1AB |\n| Livello | 2 (non attraversa i router) | 2 (non attraversa i router) |\n| Stato di default sugli switch Cisco | Attivo | Spesso disattivo: `lldp run` |\n| Timer / holdtime di default | 60 s / 180 s | 30 s / 120 s |\n| Comando | `show cdp neighbors [detail]` | `show lldp neighbors [detail]` |\n\n### Leggere l'output\n```\nSW1# show cdp neighbors\nDevice ID   Local Intrfce   Holdtme   Capability   Platform   Port ID\nR1          Gig 1/0/48      152       R S I        ISR4331    Gig 0/0/1\nSW2         Gig 1/0/24      164       S I          C9200      Gig 1/0/24\n```\n- **Local Intrfce** è la porta di SW1; **Port ID** è la porta del vicino.\n- **Capability**: R = router, S = switch, I = IGMP.\n- Con `detail` si vedono anche indirizzo IP di gestione, versione software e, per CDP, Native VLAN e duplex.\n\n### Sicurezza\nLe informazioni viaggiano in chiaro: sulle porte verso Internet o verso utenti non fidati si disattivano con `no cdp enable` e `no lldp transmit` / `no lldp receive` sull'interfaccia.",
+      "trackId": "ccna",
+      "topicId": "cdp-lldp",
+      "difficulty": 1,
+      "prerequisites": [
+        "switching-fundamentals"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:2.3"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 3750 Configuration Guide 15.0(2)SE — Configuring LLDP, LLDP-MED, and Wired Location Service",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3750/software/release/15-0_2_se/configuration/guide/scg3750/swlldp.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Catalyst 3560 Configuration Guide 15.0(2)SE — Configuring CDP",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3560/software/release/15-0_2_se/configuration/guide/scg3560/swcdp.html"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "cdp",
+        "lldp",
+        "documentazione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ports",
+          "prompt": "Nell'output di `show cdp neighbors` di SW1 compare: Device ID R1, Local Intrfce Gig 1/0/48, Port ID Gig 0/0/1. Come lo descrivi in uno schema di rete?",
+          "answer": "La porta Gi1/0/48 di SW1 è collegata alla porta Gi0/0/1 del router R1. Local Intrfce è sempre l'interfaccia del dispositivo su cui esegui il comando, Port ID quella del vicino.",
+          "keyPoints": [
+            "Local Intrfce = porta locale",
+            "Port ID = porta del vicino"
+          ],
+          "commonMistakes": [
+            "Invertire porta locale e porta remota"
+          ]
+        },
+        {
+          "key": "lldp-off",
+          "prompt": "Su uno switch Cisco `show lldp neighbors` restituisce un errore o nessun vicino, mentre CDP funziona. Qual è la causa più probabile?",
+          "answer": "LLDP è disattivato globalmente: su molti switch Cisco è disattivo per default. Si attiva con `lldp run` in configurazione globale.",
+          "keyPoints": [
+            "LLDP spesso disattivo per default",
+            "lldp run"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ios-essential-show"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "interface-errors",
+      "revision": 1,
+      "kind": "output_analysis",
+      "language": "it",
+      "title": "Leggere i contatori di errore di un'interfaccia",
+      "summary": "CRC, runt, giant, collisioni e late collision raccontano cosa non va sul cavo o nella negoziazione. Ecco come interpretarli.",
+      "body": "```\nSW1# show interfaces gigabitEthernet1/0/10\nGigabitEthernet1/0/10 is up, line protocol is up (connected)\n  Full-duplex, 1000Mb/s, media type is 10/100/1000BaseTX\n  ...\n     5 minute input rate 2000 bits/sec, 3 packets/sec\n     183421 packets input, 25012211 bytes, 0 no buffer\n     0 runts, 0 giants, 0 throttles\n     1532 input errors, 1532 CRC, 0 frame, 0 overrun, 0 ignored\n     0 output errors, 0 collisions, 0 interface resets\n     0 late collision, 0 deferred\n```\n\n| Contatore | Cosa indica | Cause tipiche |\n|---|---|---|\n| **CRC** | FCS del frame non corrisponde: il frame è arrivato danneggiato | cavo difettoso o troppo lungo, interferenze, connettore, fibra sporca, duplex mismatch |\n| **Runts** | Frame più corti di 64 byte | collisioni, duplex mismatch |\n| **Giants** | Frame più lunghi del massimo consentito | MTU diversa, jumbo frame non configurati |\n| **Input errors** | Totale degli errori in ricezione | somma di CRC, runts, giants e altri |\n| **Collisions** | Collisioni durante la trasmissione | normali solo in half-duplex |\n| **Late collision** | Collisione dopo i primi 64 byte del frame | **duplex mismatch** o cavo oltre la lunghezza massima |\n\n### Come ragionare\n- Su un link **full-duplex** collisioni e late collision devono essere **zero**.\n- CRC in crescita con collisioni a zero fanno pensare al **livello fisico**: cavo, connettore, porta. Si sostituisce il cavo e si azzerano i contatori con `clear counters` per vedere se l'errore continua.\n- I contatori sono cumulativi: conta la loro **crescita**, non il valore assoluto.",
+      "trackId": "ccna",
+      "topicId": "ethernet-lan",
+      "difficulty": 2,
+      "prerequisites": [
+        "ethernet-lan"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.1",
+        "ccna-v2:2.4"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "interfacce",
+        "crc",
+        "collisioni",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "crc",
+          "prompt": "Un'interfaccia full-duplex a 1 Gbps mostra CRC in costante aumento e zero collisioni. Qual è l'ipotesi principale e come la verifichi?",
+          "answer": "Un problema fisico: cavo danneggiato o troppo lungo, connettore, porta o interferenze. Si sostituisce il cavo (o si prova un'altra porta), si azzerano i contatori con `clear counters` e si osserva se i CRC continuano a crescere.",
+          "keyPoints": [
+            "CRC = frame danneggiati",
+            "Zero collisioni → poco probabile un problema di duplex",
+            "clear counters e osservare la crescita"
+          ],
+          "commonMistakes": [
+            "Guardare solo il valore assoluto dei contatori"
+          ]
+        },
+        {
+          "key": "late",
+          "prompt": "Cosa indica una late collision e perché su un link full-duplex non dovrebbe mai esserci?",
+          "answer": "È una collisione rilevata dopo che sono già stati trasmessi i primi 64 byte del frame. In full-duplex non esistono collisioni, perché trasmissione e ricezione usano canali separati: se le vedi, un lato è probabilmente in half-duplex (duplex mismatch) oppure il cavo supera la lunghezza massima.",
+          "keyPoints": [
+            "Collisione oltre i primi 64 byte",
+            "Full-duplex = zero collisioni",
+            "Indizio di duplex mismatch"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "duplex-mismatch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "duplex-mismatch",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: link lento con autonegoziazione disattivata da un lato",
+      "summary": "Un lato è forzato a 100/full, l'altro è in auto: il link sale ma è lentissimo. Il risultato è un duplex mismatch.",
+      "body": "### Situazione\nUn server è collegato a Gi1/0/12 di SW1. Il tecnico del server ha forzato la scheda di rete a **100 Mbps full-duplex**; la porta dello switch è rimasta in **auto**. Il link è up, ma i trasferimenti sono molto lenti e a tratti si bloccano.\n\n### Cosa succede\nQuando un lato non partecipa all'autonegoziazione, l'altro lato riesce comunque a rilevare la **velocità** dal segnale, ma non il **duplex**. Per i link a 10/100 Mbps, in mancanza di negoziazione lo standard prevede **half-duplex**. Risultato:\n- lo switch lavora a 100 Mbps **half-duplex**;\n- il server a 100 Mbps **full-duplex**.\n\n### Come si manifesta\n```\nSW1# show interfaces gigabitEthernet1/0/12\n  Half-duplex, 100Mb/s ...\n     ... 0 runts ...\n     3412 late collision\n```\n- Sul lato **half-duplex** (switch): **collisioni e late collision**, perché lo switch smette di trasmettere quando riceve.\n- Sul lato **full-duplex** (server): **CRC e runt**, frame troncati dallo switch che interrompe la trasmissione.\n\n### Correzione\nUsare la stessa impostazione ai due lati: **auto/auto** (preferibile) oppure la stessa velocità e lo stesso duplex forzati su entrambi.\n```\nSW1(config)# interface gigabitEthernet1/0/12\nSW1(config-if)# speed 100\nSW1(config-if)# duplex full\n```",
+      "trackId": "ccna",
+      "topicId": "ethernet-lan",
+      "difficulty": 2,
+      "prerequisites": [
+        "ethernet-lan"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.1"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "duplex",
+        "autonegoziazione",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "which-side",
+          "prompt": "In un duplex mismatch, quali contatori di errore crescono su ciascun lato?",
+          "answer": "Sul lato in half-duplex crescono collisioni e soprattutto late collision. Sul lato in full-duplex crescono CRC e runt, perché riceve frame interrotti dal lato half-duplex.",
+          "keyPoints": [
+            "Half: late collision",
+            "Full: CRC e runt"
+          ],
+          "commonMistakes": [
+            "Aspettarsi che il link vada in down: di solito resta up ma lento"
+          ]
+        },
+        {
+          "key": "auto",
+          "prompt": "Uno switch in auto è collegato a un host forzato a 100/full. Quale duplex sceglie lo switch e perché?",
+          "answer": "Half-duplex. Lo switch rileva la velocità di 100 Mbps dal segnale, ma senza autonegoziazione dall'altra parte non riceve informazioni sul duplex e per 10/100 Mbps adotta half-duplex.",
+          "keyPoints": [
+            "La velocità si rileva, il duplex no",
+            "Default half-duplex a 10/100"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "interface-errors"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    }
+  ]
+}

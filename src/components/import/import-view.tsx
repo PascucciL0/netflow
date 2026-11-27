@@ -412,7 +412,7 @@ function HistoryPanel({ hydrated, history, importedCount, activePackages }: { hy
                 <div className="min-w-0">
                   <p className="font-medium text-ink">{h.packageTitle}</p>
                   <p className="mt-0.5 text-[13px] text-ink-3">
-                    {fmtDate(h.at)} · {h.created.length} nuovi · {h.updated.length} aggiornati{h.skipped.length > 0 ? ` · ${h.skipped.length} ignorati` : ""}
+                    {fmtDate(h.at)} · {plural(h.created.length, "nuovo", "nuovi")} · {plural(h.updated.length, "aggiornato", "aggiornati")}{h.skipped.length > 0 ? ` · ${plural(h.skipped.length, "ignorato", "ignorati")}` : ""}
                     {h.generator ? ` · ${h.generator}` : ""}
                   </p>
                 </div>

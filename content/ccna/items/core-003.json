@@ -1,0 +1,1694 @@
+{
+  "format": "netflow.content-package",
+  "schemaVersion": 1,
+  "package": {
+    "id": "netflow-core-ccna-003",
+    "title": "NetFlow — Libreria CCNA (lotto 3): subnetting, IPv6, routing statico, OSPF, FHRP",
+    "language": "it",
+    "generator": "NetFlow seed curato",
+    "createdAt": "2026-11-27",
+    "notes": "Contenuti originali. Le fonti con verifiedOn sono state consultate il 2026-11-27; le altre sono riferimenti da verificare."
+  },
+  "items": [
+    {
+      "id": "subnetting-method",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Subnetting veloce con il metodo del block size",
+      "summary": "Per trovare network, broadcast e host di una subnet basta individuare l'ottetto interessante e il block size: 256 meno il valore della mask in quell'ottetto.",
+      "body": "Esempio: **172.16.45.130/27**. Quali sono indirizzo di rete, broadcast e range di host?\n\n### 1. Trova l'ottetto interessante\n/27 = 255.255.255.**224**. L'ottetto in cui la mask non è né 255 né 0 è il quarto: lì si decide tutto.\n\n### 2. Calcola il block size\n**256 − 224 = 32**. Le subnet partono a multipli di 32 nel quarto ottetto: 0, 32, 64, 96, **128**, 160, 192, 224.\n\n### 3. Colloca l'indirizzo\n130 sta tra 128 e 160:\n| | Indirizzo |\n|---|---|\n| Rete | 172.16.45.**128** |\n| Primo host | 172.16.45.129 |\n| Ultimo host | 172.16.45.158 |\n| Broadcast | 172.16.45.**159** (il blocco successivo meno 1) |\n\n### 4. Quanti host\nBit di host = 32 − 27 = 5 → 2⁵ − 2 = **30 host utilizzabili** (si tolgono rete e broadcast).\n\n### Tabella da tenere a mente\n| Prefisso | Mask (ultimo ottetto non 0) | Block size | Host |\n|---|---|---|---|\n| /25 | 128 | 128 | 126 |\n| /26 | 192 | 64 | 62 |\n| /27 | 224 | 32 | 30 |\n| /28 | 240 | 16 | 14 |\n| /29 | 248 | 8 | 6 |\n| /30 | 252 | 4 | 2 |\n\nLo stesso ragionamento vale quando l'ottetto interessante è il terzo: con /20 (255.255.**240**.0) il block size è 16 nel terzo ottetto.",
+      "trackId": "ccna",
+      "topicId": "subnetting",
+      "difficulty": 2,
+      "prerequisites": [
+        "ipv4-addressing"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4632 — Classless Inter-domain Routing (CIDR)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4632.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 791 — Internet Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc791",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "subnetting",
+        "ipv4",
+        "calcolo"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ex1",
+          "prompt": "Indirizzo 10.20.30.77/28: indica rete, broadcast e range di host.",
+          "answer": "/28 = mask 255.255.255.240, block size 16 nel quarto ottetto. Le subnet partono a 64 e 80; 77 sta nella subnet 10.20.30.64. Broadcast 10.20.30.79, host da 10.20.30.65 a 10.20.30.78 (14 host).",
+          "keyPoints": [
+            "Block size 16",
+            "Rete .64",
+            "Broadcast .79",
+            "Host .65–.78"
+          ],
+          "commonMistakes": [
+            "Usare 77 − 16 invece di cercare il multiplo di 16"
+          ]
+        },
+        {
+          "key": "ex2",
+          "prompt": "Indirizzo 192.168.37.200/20: qual è l'indirizzo di rete e quale il broadcast?",
+          "answer": "/20 = 255.255.240.0: l'ottetto interessante è il terzo, block size 16. I multipli di 16 vicini a 37 sono 32 e 48. Rete 192.168.32.0, broadcast 192.168.47.255.",
+          "keyPoints": [
+            "Ottetto interessante: il terzo",
+            "Rete 192.168.32.0",
+            "Broadcast 192.168.47.255"
+          ],
+          "commonMistakes": [
+            "Lavorare sul quarto ottetto anche quando la mask lo azzera"
+          ]
+        }
+      ],
+      "related": [
+        "vlsm-design",
+        "rfc1918-private-addresses"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "subnetting-practice",
+      "revision": 1,
+      "kind": "recall",
+      "language": "it",
+      "title": "Esercizi di subnetting: dal requisito alla mask",
+      "summary": "Tre esercizi per passare dal numero di host o di subnet richiesti alla mask corretta.",
+      "body": "Per scegliere la mask partendo da un requisito:\n- **numero di host**: cerca il più piccolo *h* tale che 2ʰ − 2 ≥ host richiesti; il prefisso è 32 − *h*;\n- **numero di subnet**: cerca il più piccolo *s* tale che 2ˢ ≥ subnet richieste; aggiungi *s* bit al prefisso di partenza.",
+      "trackId": "ccna",
+      "topicId": "subnetting",
+      "difficulty": 2,
+      "prerequisites": [
+        "subnetting"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4632 — Classless Inter-domain Routing (CIDR)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4632.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "subnetting",
+        "esercizi"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "hosts",
+          "prompt": "Una VLAN deve contenere 50 host. Qual è il prefisso più lungo (subnet più piccola) che puoi usare?",
+          "answer": "/26. Servono 6 bit di host: 2⁶ − 2 = 62 ≥ 50, mentre 5 bit darebbero solo 30 host. 32 − 6 = 26, mask 255.255.255.192.",
+          "keyPoints": [
+            "2ʰ − 2 ≥ host",
+            "6 bit → 62 host",
+            "/26 = 255.255.255.192"
+          ],
+          "commonMistakes": [
+            "Dimenticare il −2 e scegliere /27 pensando a 32 indirizzi"
+          ]
+        },
+        {
+          "key": "subnets",
+          "prompt": "Hai 192.168.10.0/24 e ti servono 6 subnet della stessa dimensione. Quale prefisso usi e quanti host ha ciascuna?",
+          "answer": "Servono 3 bit di subnet (2³ = 8 ≥ 6): /24 + 3 = /27. Ogni subnet ha 5 bit di host: 30 host utilizzabili. Le subnet sono .0, .32, .64 … .224.",
+          "keyPoints": [
+            "2ˢ ≥ subnet",
+            "/27",
+            "30 host per subnet"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "p2p",
+          "prompt": "Quale prefisso IPv4 si usa tipicamente per un link point-to-point tra due router, e quale alternativa permette di non sprecare indirizzi?",
+          "answer": "/30: 4 indirizzi, 2 utilizzabili, uno per router. In alternativa si può usare /31, che sui link point-to-point usa entrambi gli indirizzi senza rete e broadcast (RFC 3021).",
+          "keyPoints": [
+            "/30 = 2 host",
+            "/31 su point-to-point"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "subnetting-method",
+        "vlsm-design"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "vlsm-design",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "VLSM: assegnare subnet di dimensioni diverse",
+      "summary": "Con VLSM ogni subnet riceve solo gli indirizzi che le servono. Il metodo: ordinare dalla più grande alla più piccola e assegnare in sequenza.",
+      "body": "**VLSM** (Variable Length Subnet Masking) permette di usare prefissi diversi all'interno dello stesso blocco. Invece di dare a tutte le subnet la stessa dimensione, ognuna riceve quella necessaria.\n\n### Esempio\nBlocco disponibile: **10.1.1.0/24**. Requisiti: Uffici 100 host, Laboratorio 50, Ospiti 25, due link tra router.\n\n### Metodo\n1. Ordina dalla subnet più grande alla più piccola.\n2. Per ciascuna scegli il prefisso più lungo che basta.\n3. Assegna in sequenza: ogni subnet parte dove finisce la precedente, così ogni rete è allineata al proprio block size.\n\n| Subnet | Host | Prefisso | Rete | Broadcast |\n|---|---|---|---|---|\n| Uffici | 100 | /25 (126) | 10.1.1.0 | 10.1.1.127 |\n| Laboratorio | 50 | /26 (62) | 10.1.1.128 | 10.1.1.191 |\n| Ospiti | 25 | /27 (30) | 10.1.1.192 | 10.1.1.223 |\n| Link R1–R2 | 2 | /30 | 10.1.1.224 | 10.1.1.227 |\n| Link R2–R3 | 2 | /30 | 10.1.1.228 | 10.1.1.231 |\n\nRestano liberi 10.1.1.232–255 per usi futuri.\n\n### Perché l'ordine conta\nSe si assegnasse prima un /30 a partire da 10.1.1.0, la subnet /25 non potrebbe più iniziare da .0 e i blocchi rimasti sarebbero frammentati: la /25 deve partire da un multiplo di 128.",
+      "trackId": "ccna",
+      "topicId": "subnetting",
+      "difficulty": 2,
+      "prerequisites": [
+        "subnetting"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4632 — Classless Inter-domain Routing (CIDR)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4632.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "vlsm",
+        "subnetting",
+        "progettazione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "order",
+          "prompt": "Perché in un piano VLSM si assegnano prima le subnet più grandi?",
+          "answer": "Perché ogni subnet deve iniziare a un multiplo del proprio block size. Assegnando prima le più grandi, ognuna trova un inizio allineato e lo spazio residuo resta contiguo; assegnando prima quelle piccole si frammenta il blocco e una subnet grande potrebbe non trovare più un inizio valido.",
+          "keyPoints": [
+            "Allineamento al block size",
+            "Evitare la frammentazione"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "subnetting-method",
+        "subnetting-practice"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv4-host-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: il PC raggiunge la LAN ma non Internet",
+      "summary": "Un PC fa ping agli host della propria subnet ma non a quelli remoti. Quattro controlli sulla configurazione IP individuano quasi sempre la causa.",
+      "body": "### Situazione\nPC1 ha questa configurazione:\n```\nC:\\> ipconfig\n   IPv4 Address. . . . . . . . . . . : 192.168.10.25\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1\n```\nPing verso 192.168.10.30 (stessa subnet): riuscito. Ping verso 8.8.8.8: fallito.\n\n### Ragionamento\nPer destinazioni fuori dalla propria subnet, l'host invia il pacchetto al **Default Gateway**, che deve trovarsi **nella sua stessa subnet**. 192.168.1.1 non appartiene a 192.168.10.0/24: il PC non riesce nemmeno a risolverne l'indirizzo con ARP.\n\n### Lista di controllo\n1. **Indirizzo e mask**: l'host è nella subnet prevista per la sua VLAN? Una mask sbagliata (es. /16 invece di /24) fa credere all'host che destinazioni remote siano locali e lo porta a fare ARP invece di usare il gateway.\n2. **Default Gateway**: è nella stessa subnet ed è l'indirizzo reale dell'interfaccia del router o della SVI?\n3. **Raggiungibilità del gateway**: `ping 192.168.10.1`; se fallisce, il problema è nella LAN (VLAN, porta, SVI down).\n4. **DNS**: se `ping 8.8.8.8` funziona ma `ping www.esempio.it` no, il problema è la risoluzione dei nomi, non il routing.\n\n### Correzione\nImpostare il Default Gateway corretto, 192.168.10.1, a mano o, meglio, verificando l'opzione Router dello scope DHCP.",
+      "trackId": "ccna",
+      "topicId": "ipv4-addressing",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:1.3",
+        "ccna-v2:1.6"
+      ],
+      "sources": [
+        {
+          "title": "RFC 791 — Internet Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc791",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "troubleshooting",
+        "default-gateway",
+        "ipv4"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "mask",
+          "prompt": "Un host ha 192.168.10.25/16 invece di /24, con gateway 192.168.10.1. Cosa succede quando prova a raggiungere 192.168.20.5, che si trova in un'altra VLAN?",
+          "answer": "Con la mask /16 l'host considera 192.168.20.5 nella propria rete (192.168.0.0/16) e invia un ARP Request per quell'indirizzo invece di inoltrare il pacchetto al gateway. L'ARP non riceve risposta, perché la destinazione è in un altro Broadcast Domain, e la comunicazione fallisce.",
+          "keyPoints": [
+            "La mask decide locale o remoto",
+            "Locale → ARP diretto",
+            "Remoto → Default Gateway"
+          ],
+          "commonMistakes": [
+            "Pensare che la mask sbagliata non conti finché il gateway è giusto"
+          ]
+        }
+      ],
+      "related": [
+        "arp-resolution",
+        "dhcp-dora"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv6-address-format",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Scrivere e abbreviare gli indirizzi IPv6",
+      "summary": "128 bit, otto gruppi da 16 bit in esadecimale. Due regole di abbreviazione e la forma canonica della RFC 5952.",
+      "body": "Un indirizzo IPv6 è lungo **128 bit**, scritto come **otto gruppi di 4 cifre esadecimali** (16 bit ciascuno) separati da due punti:\n```\n2001:0db8:0000:0000:0000:ff00:0042:8329\n```\n\n### Regole di abbreviazione\n1. **Zeri iniziali** di ogni gruppo si possono omettere: `0db8` → `db8`, `0042` → `42`, `0000` → `0`.\n2. **Una sola sequenza** di gruppi tutti a zero si sostituisce con `::`. Una sola, altrimenti non si saprebbe quanti gruppi rappresenta ciascuna.\n```\n2001:db8::ff00:42:8329\n```\n\n### Forma canonica (RFC 5952)\nLa RFC 5952 raccomanda una sola rappresentazione per ogni indirizzo:\n- gli zeri iniziali **devono** essere omessi;\n- `::` deve abbreviare la sequenza di zeri **più lunga**; a parità, la **prima**;\n- `::` **non** si usa per un singolo gruppo `0`;\n- le cifre esadecimali si scrivono in **minuscolo**.\n\n| Indirizzo | Forma canonica |\n|---|---|\n| 2001:0DB8:0000:0001:0000:0000:0000:0001 | 2001:db8:0:1::1 |\n| 2001:db8:0:0:1:0:0:1 | 2001:db8::1:0:0:1 |\n| 2001:db8:0:1:1:1:1:1 | 2001:db8:0:1:1:1:1:1 |\n\n### Prefissi\nCome in IPv4 con CIDR: `2001:db8:acad:1::/64`. Nelle LAN si usa quasi sempre **/64**: 64 bit per la rete e 64 per l'Interface ID.",
+      "trackId": "ccna",
+      "topicId": "ipv6-fundamentals",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:1.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 5952 — A Recommendation for IPv6 Address Text Representation",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/info/rfc5952/",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 4291 — IP Version 6 Addressing Architecture",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4291",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv6",
+        "abbreviazione",
+        "rfc5952"
+      ],
+      "diagrams": [
+        {
+          "id": "ipv6-gua-structure"
+        }
+      ],
+      "recall": [
+        {
+          "key": "abbr",
+          "prompt": "Abbrevia nella forma canonica: 2001:0DB8:0000:0000:0001:0000:0000:00AB",
+          "answer": "2001:db8::1:0:0:ab. Ci sono due sequenze di zeri lunghe due gruppi ciascuna: a parità si abbrevia la prima. Zeri iniziali omessi e lettere minuscole.",
+          "keyPoints": [
+            "Una sola ::",
+            "A parità la prima sequenza",
+            "Minuscolo, niente zeri iniziali"
+          ],
+          "commonMistakes": [
+            "Usare :: due volte",
+            "Abbreviare la seconda sequenza invece della prima"
+          ]
+        },
+        {
+          "key": "expand",
+          "prompt": "Espandi 2001:db8:a::12 in forma completa.",
+          "answer": "2001:0db8:000a:0000:0000:0000:0000:0012. Ci sono quattro gruppi espliciti (2001, db8, a, 12), quindi :: rappresenta 8 − 4 = 4 gruppi a zero.",
+          "keyPoints": [
+            "Contare i gruppi espliciti",
+            ":: = gruppi mancanti fino a 8"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ipv6-address-types",
+        "ipv6-eui64"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv6-address-types",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Tipi di indirizzo IPv6: global, link-local, unique local, multicast",
+      "summary": "IPv6 non ha broadcast. Un'interfaccia ha di solito più indirizzi: almeno un link-local e uno o più global unicast. Ecco come riconoscerli dal prefisso.",
+      "body": "| Tipo | Prefisso | Ambito | Uso |\n|---|---|---|---|\n| **Global Unicast** | 2000::/3 (inizia per 2 o 3) | Internet | Equivalente di un indirizzo pubblico IPv4 |\n| **Unique Local** | fc00::/7 (in pratica fd00::/8) | Organizzazione | Simile agli indirizzi privati; non instradato su Internet |\n| **Link-Local** | fe80::/10 | Solo il link | Generato automaticamente; usato da NDP, dai protocolli di routing e come next hop |\n| **Multicast** | ff00::/8 | Variabile | Sostituisce il broadcast |\n| **Loopback** | ::1/128 | Host | Come 127.0.0.1 |\n| **Non specificato** | ::/128 | — | Origine prima di avere un indirizzo |\n\n### Multicast da riconoscere\n| Indirizzo | Destinatari |\n|---|---|\n| ff02::1 | tutti i nodi del link |\n| ff02::2 | tutti i router del link |\n| ff02::1:ffXX:XXXX | **solicited-node**, ricavato dagli ultimi 24 bit dell'indirizzo unicast; usato da NDP al posto dell'ARP broadcast |\n\n### Nella pratica Cisco\n```\nR1(config)# ipv6 unicast-routing\nR1(config)# interface gigabitEthernet0/0\nR1(config-if)# ipv6 address 2001:db8:acad:1::1/64\nR1(config-if)# ipv6 address fe80::1 link-local\nR1# show ipv6 interface brief\n```\nConfigurare il link-local a mano (es. `fe80::1`) rende più leggibili le Routing Table e i next hop. Senza `ipv6 unicast-routing` il router non inoltra pacchetti IPv6 e non invia Router Advertisement.",
+      "trackId": "ccna",
+      "topicId": "ipv6-fundamentals",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv6-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4291 — IP Version 6 Addressing Architecture",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4291",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 4861 — Neighbor Discovery for IP version 6 (IPv6)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://rfc-editor.org/rfc/rfc4861",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv6",
+        "link-local",
+        "multicast"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "identify",
+          "prompt": "Classifica: fe80::a1b:2cff:fe3d:4e5f, 2001:db8:1::10, ff02::2, fd12:3456:789a::1.",
+          "answer": "fe80::… è link-local (fe80::/10); 2001:db8:1::10 è nello spazio global unicast (2000::/3, anche se 2001:db8::/32 è riservato alla documentazione); ff02::2 è multicast verso tutti i router del link; fd12:… è unique local (fc00::/7).",
+          "keyPoints": [
+            "fe80 = link-local",
+            "2000::/3 = global",
+            "ff = multicast",
+            "fd = unique local"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "no-broadcast",
+          "prompt": "IPv6 non ha broadcast. Come trova un host il MAC address di un vicino senza inviare un frame a tutti?",
+          "answer": "Con NDP: invia un Neighbor Solicitation al multicast solicited-node dell'indirizzo cercato (ff02::1:ff + ultimi 24 bit). Solo gli host con quegli ultimi 24 bit, idealmente solo la destinazione, ascoltano quel gruppo e rispondono con un Neighbor Advertisement.",
+          "keyPoints": [
+            "Neighbor Solicitation",
+            "Multicast solicited-node",
+            "Neighbor Advertisement"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ipv6-address-format",
+        "ipv6-slaac-ndp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv6-eui64",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Modified EUI-64: dall'indirizzo MAC all'Interface ID",
+      "summary": "EUI-64 ricava i 64 bit dell'Interface ID dal MAC address: si divide il MAC a metà, si inserisce FFFE e si inverte il settimo bit.",
+      "body": "Con un prefisso /64, l'host deve generare 64 bit di **Interface ID**. Il metodo **Modified EUI-64** li ricava dal MAC address di 48 bit.\n\n### Procedura\nMAC address: **00-1A-2B-3C-4D-5E**\n1. Dividi il MAC a metà: `001A2B` | `3C4D5E`.\n2. Inserisci **FFFE** in mezzo: `001A2BFFFE3C4D5E`.\n3. Inverti il **settimo bit** del primo byte (bit Universal/Local): `00` = 0000 0000 → 0000 0**0**10 = `02`.\n4. Risultato: `021A:2BFF:FE3C:4D5E`.\n\nCon il prefisso 2001:db8:1:1::/64 l'indirizzo diventa **2001:db8:1:1:21a:2bff:fe3c:4d5e**.\n\n### Trucco per il settimo bit\nBasta guardare la seconda cifra esadecimale del primo byte e sommare o sottrarre 2: 0 ↔ 2, 4 ↔ 6, 8 ↔ A, C ↔ E (e 1 ↔ 3, 5 ↔ 7, 9 ↔ B, D ↔ F).\n\n### Su IOS\n```\nR1(config-if)# ipv6 address 2001:db8:1:1::/64 eui-64\n```\nAnche gli indirizzi link-local generati automaticamente sui router Cisco usano EUI-64.\n\n### Nota sulla privacy\nUn Interface ID derivato dal MAC è sempre lo stesso, anche cambiando rete: identifica il dispositivo. I sistemi operativi moderni per questo generano Interface ID casuali o opachi per gli indirizzi degli host.",
+      "trackId": "ccna",
+      "topicId": "ipv6-fundamentals",
+      "difficulty": 2,
+      "prerequisites": [
+        "ipv6-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4291 — IP Version 6 Addressing Architecture",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4291",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv6",
+        "eui-64",
+        "interface-id"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "calc",
+          "prompt": "Calcola l'Interface ID Modified EUI-64 per il MAC address 0C-7A-15-60-B2-91.",
+          "answer": "Si divide in 0C7A15 e 60B291, si inserisce FFFE: 0C7A15FFFE60B291. Il primo byte 0C = 0000 1100: invertendo il settimo bit diventa 0000 1110 = 0E. Interface ID: 0e7a:15ff:fe60:b291.",
+          "keyPoints": [
+            "Inserire FFFE a metà",
+            "Invertire il 7° bit: 0C → 0E"
+          ],
+          "commonMistakes": [
+            "Invertire il primo bit invece del settimo",
+            "Dimenticare FFFE"
+          ]
+        }
+      ],
+      "related": [
+        "ipv6-address-format",
+        "ipv6-slaac-ndp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv6-slaac-ndp",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "NDP e SLAAC: come un host IPv6 si configura da solo",
+      "summary": "Con NDP l'host scopre router, prefisso e vicini. Con SLAAC costruisce il proprio indirizzo dal prefisso del Router Advertisement e verifica che sia libero con DAD.",
+      "body": "**NDP** (Neighbor Discovery Protocol) usa messaggi **ICMPv6** e sostituisce ARP e parte di DHCP.\n\n| Messaggio | Tipo ICMPv6 | A cosa serve |\n|---|---|---|\n| Router Solicitation (RS) | 133 | L'host chiede ai router di annunciarsi (verso ff02::2) |\n| Router Advertisement (RA) | 134 | Il router annuncia prefisso, lunghezza, gateway e flag |\n| Neighbor Solicitation (NS) | 135 | Chiede il MAC address di un vicino; usato anche per DAD |\n| Neighbor Advertisement (NA) | 136 | Risposta con il MAC address |\n| Redirect | 137 | Il router indica un next hop migliore |\n\n### SLAAC passo per passo\n1. L'host genera un **link-local** e verifica che sia unico.\n2. Invia un **RS**; il router risponde con un **RA** contenente il prefisso (es. 2001:db8:1:1::/64).\n3. L'host combina il prefisso con un **Interface ID** (EUI-64 o casuale).\n4. Prima di usarlo esegue la **DAD** (Duplicate Address Detection): invia un NS per il proprio indirizzo; se nessuno risponde, l'indirizzo è libero.\n5. Usa come Default Gateway l'indirizzo **link-local** del router che ha inviato l'RA.\n\nOgni indirizzo ha una **preferred lifetime** e una **valid lifetime**, indicate nell'RA.\n\n### I flag dell'RA\n- **M** (Managed): gli indirizzi si ottengono da un server **DHCPv6 stateful**.\n- **O** (Other): l'indirizzo si fa con SLAAC, le altre informazioni (es. DNS) si chiedono a **DHCPv6 stateless**.",
+      "trackId": "ccna",
+      "topicId": "ipv6-ndp-slaac",
+      "difficulty": 2,
+      "prerequisites": [
+        "ipv6-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4861 — Neighbor Discovery for IP version 6 (IPv6)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://rfc-editor.org/rfc/rfc4861",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 4862 — IPv6 Stateless Address Autoconfiguration",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4862.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv6",
+        "ndp",
+        "slaac",
+        "dad"
+      ],
+      "diagrams": [
+        {
+          "id": "slaac-exchange"
+        }
+      ],
+      "recall": [
+        {
+          "key": "steps",
+          "prompt": "Descrivi come un host ottiene un indirizzo global unicast con SLAAC, incluso il controllo dei duplicati.",
+          "answer": "Invia un Router Solicitation a ff02::2; il router risponde con un Router Advertisement che contiene il prefisso /64. L'host aggiunge un Interface ID (EUI-64 o casuale) e, prima di usare l'indirizzo, esegue la DAD inviando un Neighbor Solicitation per quell'indirizzo: se nessuno risponde con un Neighbor Advertisement, l'indirizzo è libero. Il gateway è il link-local del router.",
+          "keyPoints": [
+            "RS → RA con prefisso",
+            "Prefisso + Interface ID",
+            "DAD con NS",
+            "Gateway = link-local del router"
+          ],
+          "commonMistakes": [
+            "Pensare che SLAAC richieda un server DHCP"
+          ]
+        },
+        {
+          "key": "flags",
+          "prompt": "Cosa indicano i flag M e O in un Router Advertisement?",
+          "answer": "M = 1: gli indirizzi vanno ottenuti da un server DHCPv6 stateful. O = 1 (con M = 0): l'indirizzo si costruisce con SLAAC e le altre informazioni, come i server DNS, si chiedono a un DHCPv6 stateless.",
+          "keyPoints": [
+            "M = DHCPv6 stateful",
+            "O = DHCPv6 stateless per le altre opzioni"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ipv6-address-types",
+        "ipv6-eui64",
+        "ra-guard-storm-control"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "administrative-distance",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Administrative Distance e metrica: chi vince tra due route",
+      "summary": "Il router sceglie prima il prefisso più lungo. A parità di prefisso decide l'Administrative Distance della fonte, e solo dentro lo stesso protocollo la metrica.",
+      "body": "Un router può conoscere la stessa destinazione da fonti diverse: una route statica, OSPF, EIGRP. Per decidere quale installare nella Routing Table usa tre criteri, in quest'ordine.\n\n1. **Longest prefix match** al momento dell'inoltro: 10.1.1.0/24 e 10.1.0.0/16 sono destinazioni diverse e convivono nella tabella; vince la più specifica che contiene l'indirizzo.\n2. **Administrative Distance** (AD): per lo **stesso prefisso** appreso da fonti diverse vince l'AD più bassa, cioè la fonte considerata più affidabile.\n3. **Metrica**: per lo stesso prefisso appreso dallo **stesso protocollo** vince la metrica più bassa (costo per OSPF, metrica composita per EIGRP, hop count per RIP). A parità di metrica il router può bilanciare il traffico (ECMP).\n\n### Valori di default Cisco\n| Fonte | AD |\n|---|---|\n| Connessa | 0 |\n| Statica | 1 |\n| eBGP | 20 |\n| EIGRP interno | 90 |\n| OSPF | 110 |\n| IS-IS | 115 |\n| RIP | 120 |\n| EIGRP esterno | 170 |\n| iBGP | 200 |\n| Sconosciuta | 255 (mai installata) |\n\nIn `show ip route` l'AD è il primo numero tra parentesi quadre: `[110/2]` = AD 110, metrica 2.\n\nLe metriche di protocolli diversi non si confrontano mai tra loro: un costo OSPF 20 e una metrica RIP 2 non sono paragonabili, per questo serve l'AD.",
+      "trackId": "ccna",
+      "topicId": "routing-fundamentals",
+      "difficulty": 2,
+      "prerequisites": [
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.1"
+      ],
+      "sources": [
+        {
+          "title": "Understand Administrative Distance",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/15986-admin-distance.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "administrative-distance",
+        "metrica",
+        "routing-table"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "choose",
+          "prompt": "R1 impara 10.5.0.0/16 da OSPF con costo 20 e da EIGRP con metrica 3072. Quale route installa e perché?",
+          "answer": "Quella EIGRP: lo stesso prefisso arriva da due protocolli diversi, quindi decide l'Administrative Distance. EIGRP interno ha AD 90, OSPF 110: vince EIGRP. Le metriche di protocolli diversi non si confrontano.",
+          "keyPoints": [
+            "Stesso prefisso, protocolli diversi → AD",
+            "EIGRP 90 < OSPF 110"
+          ],
+          "commonMistakes": [
+            "Confrontare costo OSPF e metrica EIGRP"
+          ]
+        },
+        {
+          "key": "lpm",
+          "prompt": "R1 ha una route OSPF per 10.1.1.0/24 e una route statica per 10.1.0.0/16. Un pacchetto è destinato a 10.1.1.50. Quale route usa?",
+          "answer": "La route OSPF 10.1.1.0/24, perché è il prefisso più lungo che contiene la destinazione. L'AD conta solo per scegliere tra route con lo stesso prefisso; qui i prefissi sono diversi e convivono entrambi nella tabella.",
+          "keyPoints": [
+            "Longest prefix match prima di tutto",
+            "AD solo a parità di prefisso"
+          ],
+          "commonMistakes": [
+            "Scegliere la statica perché ha AD 1"
+          ]
+        }
+      ],
+      "related": [
+        "routing-longest-prefix",
+        "show-ip-route",
+        "floating-static"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "show-ip-route",
+      "revision": 1,
+      "kind": "output_analysis",
+      "language": "it",
+      "title": "Leggere `show ip route` riga per riga",
+      "summary": "Codice della fonte, prefisso, [AD/metrica], next hop, età e interfaccia di uscita: come estrarre il percorso di un pacchetto dalla Routing Table.",
+      "body": "```\nR1# show ip route\nCodes: L - local, C - connected, S - static, O - OSPF, D - EIGRP ...\nGateway of last resort is 203.0.113.1 to network 0.0.0.0\n\nS*    0.0.0.0/0 [1/0] via 203.0.113.1\n      10.0.0.0/8 is variably subnetted, 4 subnets, 4 masks\nC        10.0.12.0/30 is directly connected, GigabitEthernet0/1\nL        10.0.12.1/32 is directly connected, GigabitEthernet0/1\nO        10.2.0.0/16 [110/2] via 10.0.12.2, 00:14:03, GigabitEthernet0/1\nO        10.2.5.0/24 [110/3] via 10.0.12.2, 00:14:03, GigabitEthernet0/1\n```\n\n### Come si legge una riga\n`O 10.2.0.0/16 [110/2] via 10.0.12.2, 00:14:03, GigabitEthernet0/1`\n| Parte | Significato |\n|---|---|\n| `O` | appresa da OSPF |\n| `10.2.0.0/16` | rete di destinazione e prefisso |\n| `[110/2]` | AD 110, metrica (costo) 2 |\n| `via 10.0.12.2` | next hop |\n| `00:14:03` | da quanto tempo la route è in tabella |\n| `GigabitEthernet0/1` | interfaccia di uscita |\n\n### Righe speciali\n- **C** e **L**: ogni indirizzo configurato su un'interfaccia attiva genera una route connessa (la subnet) e una **local** /32 (l'indirizzo del router stesso).\n- **S\\*** con `0.0.0.0/0`: route di default; l'asterisco la indica come candidata a *gateway of last resort*.\n\n### Esercizio\nUn pacchetto per **10.2.5.9**: corrispondono 10.2.0.0/16, 10.2.5.0/24 e 0.0.0.0/0. Vince **10.2.5.0/24**, il prefisso più lungo. Next hop 10.0.12.2, uscita Gi0/1.\nUn pacchetto per **10.3.1.1**: nessuna route specifica, si usa la **default route** verso 203.0.113.1.",
+      "trackId": "ccna",
+      "topicId": "routing-fundamentals",
+      "difficulty": 2,
+      "prerequisites": [
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.1"
+      ],
+      "sources": [
+        {
+          "title": "Understand Administrative Distance",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/15986-admin-distance.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "routing-table",
+        "show-ip-route",
+        "output"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "read",
+          "prompt": "Nella riga `O 172.16.8.0/22 [110/65] via 10.0.0.2, 00:02:11, Serial0/0/0`, cosa indicano 110 e 65?",
+          "answer": "110 è l'Administrative Distance (OSPF) e 65 la metrica, cioè il costo OSPF totale per raggiungere 172.16.8.0/22 passando per il next hop 10.0.0.2.",
+          "keyPoints": [
+            "Primo numero: AD",
+            "Secondo numero: metrica"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "local",
+          "prompt": "Perché in `show ip route` compare una route L 10.0.12.1/32 accanto alla route C 10.0.12.0/30?",
+          "answer": "La route C rappresenta la subnet collegata all'interfaccia; la route L (local) /32 rappresenta l'indirizzo configurato sul router stesso. Serve al router per riconoscere i pacchetti destinati a sé, che non vanno inoltrati ma elaborati localmente.",
+          "keyPoints": [
+            "C = subnet collegata",
+            "L = indirizzo dell'interfaccia /32"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "administrative-distance",
+        "routing-longest-prefix",
+        "static-route-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "static-route-types",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Route statiche: di rete, host e di default",
+      "summary": "Una route statica indica next hop o interfaccia di uscita per un prefisso. Cambiando il prefisso si ottiene una route di rete, una host route o la default route.",
+      "body": "```\nR1(config)# ip route 192.168.50.0 255.255.255.0 10.0.12.2        ! route di rete\nR1(config)# ip route 192.168.50.10 255.255.255.255 10.0.13.2     ! host route (/32)\nR1(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.1                  ! default route\n```\n\n| Tipo | Prefisso | Uso tipico |\n|---|---|---|\n| **Network route** | la subnet di destinazione | raggiungere una LAN remota |\n| **Host route** | /32 | instradare un singolo host per un percorso diverso (es. un server) |\n| **Default route** | 0.0.0.0/0 | tutto ciò che non ha una route più specifica, di solito verso Internet |\n\n### Next hop o interfaccia di uscita\n- **Next hop** (`10.0.12.2`): il router fa una ricerca ricorsiva per capire da quale interfaccia raggiungerlo.\n- **Interfaccia di uscita** (`GigabitEthernet0/1`): adatta ai link point-to-point. Su Ethernet è sconsigliata da sola, perché il router considera ogni destinazione direttamente collegata e deve fare ARP per ciascuna.\n- **Entrambi** (`ip route 192.168.50.0 255.255.255.0 GigabitEthernet0/1 10.0.12.2`): la forma più precisa.\n\n### Il ritorno\nUna route statica funziona in **una sola direzione**. Se R1 conosce la LAN di R2 ma R2 non conosce quella di R1, i ping falliscono: la richiesta arriva, la risposta no.\n\n### Verifica\n```\nR1# show ip route static\nR1# ping 192.168.50.1 source 192.168.10.1\n```",
+      "trackId": "ccna",
+      "topicId": "static-routing",
+      "difficulty": 1,
+      "prerequisites": [
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.2",
+        "ccna-v2:3.2.a",
+        "ccna-v2:3.2.b",
+        "ccna-v2:3.2.c"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Understand Administrative Distance",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/15986-admin-distance.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "static-route",
+        "default-route",
+        "host-route"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "types",
+          "prompt": "Scrivi i comandi per: (1) la default route verso 203.0.113.1; (2) una host route per 10.9.9.9 via 10.0.0.6.",
+          "answer": "(1) `ip route 0.0.0.0 0.0.0.0 203.0.113.1`. (2) `ip route 10.9.9.9 255.255.255.255 10.0.0.6`.",
+          "keyPoints": [
+            "Default: 0.0.0.0 0.0.0.0",
+            "Host route: mask /32"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "return",
+          "prompt": "Hai configurato su R1 una route statica per la LAN dietro R2. Il ping da un PC di R1 verso un PC di R2 fallisce, ma `show ip route` su R1 è corretto. Qual è la prima cosa da controllare?",
+          "answer": "Il percorso di ritorno: R2 deve avere una route (statica, dinamica o di default) verso la LAN di R1. Il routing è indipendente in ogni direzione.",
+          "keyPoints": [
+            "Ogni router decide da solo",
+            "Serve la route di ritorno"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "floating-static",
+        "ipv6-static-routes",
+        "show-ip-route"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "floating-static",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Floating static route: un percorso di riserva",
+      "summary": "Una route statica con Administrative Distance più alta di quella principale resta fuori dalla Routing Table finché il percorso principale non scompare.",
+      "body": "Una **floating static route** è una route statica di backup: le si assegna un'**Administrative Distance** più alta della route principale, così non viene installata finché la principale esiste.\n\n### Esempio\nR1 raggiunge la sede remota 10.50.0.0/16 tramite OSPF sul link in fibra (AD 110). Come riserva c'è un link 4G verso 198.51.100.1.\n```\nR1(config)# ip route 10.50.0.0 255.255.0.0 198.51.100.1 130\n```\n- Finché OSPF annuncia 10.50.0.0/16, la route OSPF (AD 110) vince e la statica (AD 130) non compare in `show ip route`.\n- Se il link in fibra cade e la route OSPF scompare, la statica viene installata e il traffico passa sul 4G.\n\n### Scegliere il valore di AD\nDeve essere **più alto** della route da proteggere:\n| Principale | AD | Floating static, ad esempio |\n|---|---|---|\n| statica | 1 | 2 o superiore |\n| EIGRP interno | 90 | 95 |\n| OSPF | 110 | 115–130 |\n\n### Attenzione\nLa route di backup si attiva solo se la principale **sparisce** dalla tabella. Con una route statica principale verso un next hop, se il link cade ma l'interfaccia locale resta up (ad esempio attraverso uno switch), la route principale rimane in tabella e il backup non entra in funzione. In questi casi si usa un meccanismo di tracciamento come IP SLA.",
+      "trackId": "ccna",
+      "topicId": "static-routing",
+      "difficulty": 2,
+      "prerequisites": [
+        "static-routing"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:3.2",
+        "ccna-v2:3.2.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Understand Administrative Distance",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/border-gateway-protocol-bgp/15986-admin-distance.html",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "floating-static",
+        "backup",
+        "administrative-distance"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ad",
+          "prompt": "La route principale verso 10.50.0.0/16 è appresa con OSPF. Scrivi una floating static di backup via 198.51.100.1 e spiega perché in condizioni normali non compare in tabella.",
+          "answer": "`ip route 10.50.0.0 255.255.0.0 198.51.100.1 130`. Ha AD 130, più alta dell'AD 110 di OSPF: per lo stesso prefisso il router installa la route con AD più bassa. La statica viene installata solo quando la route OSPF scompare.",
+          "keyPoints": [
+            "AD maggiore della principale",
+            "Installata solo se la principale sparisce"
+          ],
+          "commonMistakes": [
+            "Usare AD 1 o lasciare il default, che renderebbe la statica la route principale"
+          ]
+        }
+      ],
+      "related": [
+        "administrative-distance",
+        "static-route-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipv6-static-routes",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Route statiche IPv6",
+      "summary": "La sintassi è `ipv6 route prefisso/lunghezza next-hop`. Con un next hop link-local bisogna indicare anche l'interfaccia di uscita.",
+      "body": "```\nR1(config)# ipv6 unicast-routing\nR1(config)# ipv6 route 2001:db8:50::/64 2001:db8:12::2                    ! next hop global\nR1(config)# ipv6 route 2001:db8:60::/64 GigabitEthernet0/1 fe80::2       ! next hop link-local\nR1(config)# ipv6 route ::/0 2001:db8:ffff::1                              ! default route\nR1(config)# ipv6 route 2001:db8:70::/64 2001:db8:13::2 130                ! floating static\n```\n\n### Perché il link-local richiede l'interfaccia\nGli indirizzi **link-local** (fe80::/10) sono validi solo sul singolo link e possono ripetersi su interfacce diverse: `fe80::2` potrebbe esistere sia dietro Gi0/0 sia dietro Gi0/1. Il router non può dedurre l'interfaccia, quindi va scritta esplicitamente.\n\n### Verifica\n```\nR1# show ipv6 route static\nR1# ping 2001:db8:50::1\n```\n\n### Errori frequenti\n- Dimenticare `ipv6 unicast-routing`: il router non inoltra pacchetti IPv6.\n- Scrivere la mask come in IPv4: in IPv6 si usa sempre la lunghezza del prefisso (`/64`).\n- Default route IPv6: `::/0`, non `0::0 0::0`.",
+      "trackId": "ccna",
+      "topicId": "static-routing",
+      "difficulty": 2,
+      "prerequisites": [
+        "static-routing",
+        "ipv6-fundamentals"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:3.2",
+        "ccna-v2:3.2.a",
+        "ccna-v2:3.2.b",
+        "ccna-v2:3.2.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 4291 — IP Version 6 Addressing Architecture",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4291",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv6",
+        "static-route"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ll",
+          "prompt": "Perché `ipv6 route 2001:db8:60::/64 fe80::2` viene rifiutato, mentre `ipv6 route 2001:db8:60::/64 GigabitEthernet0/1 fe80::2` è accettato?",
+          "answer": "Un indirizzo link-local vale solo su un link e lo stesso fe80::2 può comparire su più interfacce. Senza l'interfaccia di uscita il router non sa su quale link cercare il next hop, quindi l'interfaccia è obbligatoria.",
+          "keyPoints": [
+            "Link-local non è univoco tra interfacce",
+            "Interfaccia obbligatoria"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "static-route-types",
+        "ipv6-address-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "static-route-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: la route statica c'è ma il traffico non passa",
+      "summary": "R1 ha la route verso la LAN di R3, ma il ping fallisce. Tre errori tipici: next hop sbagliato, ritorno mancante, prefisso scritto male.",
+      "body": "### Topologia\nPC1 (192.168.1.10) – R1 – 10.0.12.0/30 – R2 – 10.0.23.0/30 – R3 – PC3 (192.168.3.10)\n\nConfigurazione di R1:\n```\nR1(config)# ip route 192.168.3.0 255.255.255.0 10.0.23.2\n```\nIl ping da PC1 a PC3 fallisce.\n\n### Analisi\n1. **Il next hop è raggiungibile da R1?** 10.0.23.2 non appartiene a nessuna subnet collegata a R1. La ricerca ricorsiva fallisce e la route non viene installata (in `show ip route` non compare). Il next hop corretto è il vicino diretto, **10.0.12.2** (R2).\n2. **R2 sa dove andare?** R2 deve avere una route per 192.168.3.0/24 verso 10.0.23.2.\n3. **Il ritorno esiste?** R3 e R2 devono conoscere 192.168.1.0/24.\n\n### Strumenti\n```\nR1# show ip route 192.168.3.0\nR1# traceroute 192.168.3.10\n```\n`traceroute` mostra fino a quale router il pacchetto arriva: se si ferma a R2, il problema è su R2 o oltre.\n\n### Altri errori frequenti\n- Prefisso o mask sbagliati: `ip route 192.168.30.0 255.255.255.0 …` crea una route per un'altra rete. Se indirizzo e mask non sono coerenti (bit di host a 1), IOS rifiuta il comando con *Inconsistent address and mask*.\n- Interfaccia di uscita sbagliata o in shutdown: la route sparisce dalla tabella.\n- Una route più specifica, magari appresa da un protocollo dinamico, attira il traffico altrove.",
+      "trackId": "ccna",
+      "topicId": "static-routing",
+      "difficulty": 2,
+      "prerequisites": [
+        "static-routing"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.2",
+        "ccna-v2:2.4"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "static-route",
+        "troubleshooting",
+        "traceroute"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "nexthop",
+          "prompt": "Perché una route statica con un next hop che non è su una subnet collegata può non comparire in `show ip route`?",
+          "answer": "Il router deve risolvere il next hop in modo ricorsivo: cerca nella Routing Table una route per raggiungerlo. Se non ne trova, la route statica non è utilizzabile e non viene installata. Il next hop deve essere un vicino raggiungibile, normalmente sulla subnet condivisa.",
+          "keyPoints": [
+            "Ricerca ricorsiva del next hop",
+            "Next hop = vicino diretto"
+          ],
+          "commonMistakes": [
+            "Indicare come next hop il router finale invece del vicino"
+          ]
+        }
+      ],
+      "related": [
+        "static-route-types",
+        "icmp-ping-traceroute"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-fundamentals",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "OSPF: link-state, aree e costo",
+      "summary": "Ogni router OSPF conosce la mappa completa dell'area e calcola i percorsi migliori con l'algoritmo SPF. La metrica è il costo, derivato dalla banda.",
+      "body": "**OSPF** (Open Shortest Path First) è un protocollo di routing **link-state**, standard aperto, usato in moltissime reti aziendali.\n\n### Come funziona\n1. I router scoprono i vicini con i pacchetti **Hello**.\n2. Si scambiano **LSA** (Link State Advertisement) che descrivono i propri link.\n3. Ogni router costruisce la stessa **LSDB** (Link State Database), cioè la mappa dell'area.\n4. Ognuno esegue l'algoritmo **SPF** (Dijkstra) mettendosi alla radice e installa nella Routing Table i percorsi a costo minimo.\n\nUn protocollo **distance vector** (come RIP) conosce solo \"distanza e direzione\" annunciate dai vicini; OSPF invece conosce la topologia.\n\n### Aree\nLe aree limitano la dimensione della LSDB. All'esame CCNA si usa **OSPF single area**, cioè tutti i router nell'**area 0** (backbone). In una rete multi-area, i router tra due aree sono **ABR** (Area Border Router).\n\n### Costo\nCosto = **reference bandwidth / banda dell'interfaccia**. La reference bandwidth di default è **100 Mbps**:\n| Interfaccia | Costo con reference 100 Mbps |\n|---|---|\n| 10 Mbps | 10 |\n| 100 Mbps | 1 |\n| 1 Gbps | 1 |\n| 10 Gbps | 1 |\n\nIl costo minimo è 1, quindi FastEthernet e 10 Gigabit risultano uguali. Si corregge alzando la reference bandwidth su **tutti** i router:\n```\nR1(config-router)# auto-cost reference-bandwidth 100000   ! in Mbps: 100 Gbps\n```\nIn alternativa si imposta il costo per interfaccia con `ip ospf cost`.\n\nLa metrica di una route è la **somma dei costi** delle interfacce di uscita lungo il percorso.",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "routing-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "link-state",
+        "costo"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "cost",
+          "prompt": "Con la reference bandwidth di default, un percorso usa due link da 1 Gbps e un altro un solo link da 100 Mbps. Quale preferisce OSPF? Ha senso?",
+          "answer": "Con reference 100 Mbps entrambi i tipi di link costano 1: il percorso con due link da 1 Gbps costa 2, quello con un link da 100 Mbps costa 1, quindi OSPF preferisce il link a 100 Mbps. Non ha senso dal punto di vista della banda: si risolve con `auto-cost reference-bandwidth` più alta su tutti i router.",
+          "keyPoints": [
+            "Costo = reference / banda, minimo 1",
+            "Default 100 Mbps appiattisce i link veloci",
+            "Cambiare la reference su tutti i router"
+          ],
+          "commonMistakes": [
+            "Pensare che OSPF consideri automaticamente la banda reale oltre i 100 Mbps"
+          ]
+        },
+        {
+          "key": "ls-vs-dv",
+          "prompt": "Qual è la differenza essenziale tra un protocollo link-state come OSPF e uno distance vector?",
+          "answer": "Con il link-state ogni router riceve le descrizioni dei link (LSA) di tutta l'area, costruisce la stessa LSDB e calcola da solo i percorsi con SPF. Con il distance vector il router conosce solo le route e le metriche annunciate dai vicini, senza vedere la topologia.",
+          "keyPoints": [
+            "Link-state: mappa completa + SPF",
+            "Distance vector: route sentite dai vicini"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-neighbors",
+        "ospf-config",
+        "administrative-distance"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-neighbors",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Adiacenze OSPF: dagli Hello allo stato Full",
+      "summary": "Due router OSPF diventano vicini solo se alcuni parametri degli Hello coincidono. Poi sincronizzano le LSDB passando per ExStart, Exchange e Loading.",
+      "body": "### Gli stati\n| Stato | Cosa è successo |\n|---|---|\n| **Down** | Nessun Hello ricevuto dal vicino |\n| **Init** | Ricevuto un Hello, ma il vicino non mi elenca ancora |\n| **2-Way** | Ciascuno vede il proprio Router ID negli Hello dell'altro: comunicazione bidirezionale |\n| **ExStart** | Si decide chi guida lo scambio (master/slave) |\n| **Exchange** | Scambio dei DBD, il riassunto della LSDB |\n| **Loading** | Richiesta (LSR) e invio (LSU) delle LSA mancanti |\n| **Full** | LSDB sincronizzate: adiacenza completa |\n\nGli Hello sono inviati a **224.0.0.5** (tutti i router OSPF). Timer di default su Ethernet e point-to-point: **Hello 10 s, Dead 40 s**.\n\n### Cosa deve coincidere\n- **Area ID**\n- **Subnet e mask** dell'interfaccia (su reti broadcast)\n- **Hello e Dead interval**\n- **Autenticazione**, se configurata\n- **Flag di area stub**\n\nE inoltre: **Router ID diversi**, interfaccia **non passiva**, **MTU uguale** (un MTU diverso blocca i router in ExStart/Exchange).\n\n### 2-Way non è sempre un problema\nSu una rete broadcast con più router, i router che non sono DR né BDR (**DROther**) restano in **2-Way** tra loro: diventano Full solo con DR e BDR. È il comportamento normale.\n\n```\nR1# show ip ospf neighbor\nNeighbor ID  Pri  State         Dead Time  Address    Interface\n2.2.2.2        1  FULL/DR       00:00:36   10.0.0.2   Gi0/0\n3.3.3.3        1  2WAY/DROTHER  00:00:33   10.0.0.3   Gi0/0\n```",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "ospf"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:3.3",
+        "ccna-v2:3.3.a"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "adiacenza",
+        "neighbor-states"
+      ],
+      "diagrams": [
+        {
+          "id": "ospf-adjacency"
+        }
+      ],
+      "recall": [
+        {
+          "key": "match",
+          "prompt": "Elenca i parametri che devono coincidere perché due router OSPF sulla stessa Ethernet diventino vicini.",
+          "answer": "Area ID, subnet e mask, Hello e Dead interval, autenticazione e flag stub. Inoltre i Router ID devono essere diversi, l'interfaccia non deve essere passiva e, per arrivare a Full, l'MTU deve essere uguale.",
+          "keyPoints": [
+            "Area, subnet/mask, timer, autenticazione, stub",
+            "RID unici, non passive",
+            "MTU per arrivare a Full"
+          ],
+          "commonMistakes": [
+            "Pensare che debba coincidere il process ID (`router ospf 1`): è locale"
+          ]
+        },
+        {
+          "key": "2way",
+          "prompt": "In `show ip ospf neighbor` vedi un vicino in 2WAY/DROTHER. Devi intervenire?",
+          "answer": "Non necessariamente. Su una rete broadcast due DROther restano in 2-Way tra loro e formano l'adiacenza Full solo con DR e BDR. È un problema solo se il vicino dovrebbe essere DR/BDR, o su un link point-to-point, dove l'atteso è Full.",
+          "keyPoints": [
+            "DROther ↔ DROther = 2-Way è normale",
+            "Full solo con DR/BDR"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-dr-bdr",
+        "ospf-troubleshooting",
+        "ospf-fundamentals"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-dr-bdr",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "DR e BDR: perché esistono e come vengono eletti",
+      "summary": "Su una rete broadcast OSPF elegge un Designated Router e un backup per evitare che tutti i router si scambino LSA con tutti. L'elezione non è preemptive.",
+      "body": "Su una Ethernet con *n* router, se ognuno formasse un'adiacenza Full con tutti si avrebbero n(n−1)/2 adiacenze e molti LSA duplicati. OSPF elegge invece:\n- un **DR** (Designated Router), con cui tutti formano un'adiacenza Full;\n- un **BDR** (Backup DR), pronto a sostituirlo;\n- gli altri sono **DROther** e restano in 2-Way tra loro.\n\nI DROther inviano gli aggiornamenti a **224.0.0.6** (DR e BDR); il DR li ridistribuisce a tutti su **224.0.0.5**.\n\n### Elezione\n1. Vince la **priorità OSPF** più alta dell'interfaccia (default **1**, intervallo 0–255).\n2. A parità, vince il **Router ID** più alto.\n3. Priorità **0** = il router non può diventare né DR né BDR.\n\n```\nR1(config)# interface gigabitEthernet0/0\nR1(config-if)# ip ospf priority 100\n```\n\n### Non è preemptive\nSe un router con priorità più alta si aggiunge dopo l'elezione, **non** prende il posto del DR. Il ruolo cambia solo se il DR cade (il BDR diventa DR e si elegge un nuovo BDR) o se si riavvia il processo OSPF con `clear ip ospf process`.\n\n### Point-to-point\nSui link punto-punto non si elegge alcun DR. Su un collegamento Ethernet tra due soli router si può configurare `ip ospf network point-to-point`: niente elezione e adiacenza più rapida.",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "ospf"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.3.b",
+        "ccna-v2:3.3.c"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "dr",
+        "bdr",
+        "elezione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "elect",
+          "prompt": "Su una Ethernet ci sono R1 (priorità 1, RID 1.1.1.1), R2 (priorità 1, RID 2.2.2.2), R3 (priorità 0, RID 9.9.9.9). Tutti partono insieme. Chi è DR e chi BDR?",
+          "answer": "DR = R2, BDR = R1. R3 ha priorità 0 e non partecipa. Tra R1 e R2 la priorità è uguale, quindi vince il Router ID più alto: R2.",
+          "keyPoints": [
+            "Priorità più alta",
+            "Poi RID più alto",
+            "Priorità 0 esclusa"
+          ],
+          "commonMistakes": [
+            "Scegliere R3 perché ha il RID più alto"
+          ]
+        },
+        {
+          "key": "preempt",
+          "prompt": "Dopo l'elezione colleghi R4 con priorità 200. Diventa subito DR?",
+          "answer": "No. L'elezione OSPF non è preemptive: R4 diventa DROther finché il DR attuale non cade o il processo OSPF non viene riavviato.",
+          "keyPoints": [
+            "Nessuna preemption"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-neighbors",
+        "ospf-router-id"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-router-id",
+      "revision": 1,
+      "kind": "flashcard",
+      "language": "it",
+      "title": "Come OSPF sceglie il Router ID",
+      "summary": "Router ID manuale, poi l'indirizzo di loopback più alto, poi il più alto tra le interfacce fisiche attive.",
+      "body": "Il **Router ID** (RID) è un numero di 32 bit scritto come un indirizzo IPv4. Identifica il router nella LSDB e deve essere **unico** nel dominio OSPF.\n\n```\nR1(config)# router ospf 1\nR1(config-router)# router-id 1.1.1.1\nR1# clear ip ospf process\n```\nIl nuovo RID si applica solo dopo il riavvio del processo (o del router).",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 1,
+      "prerequisites": [
+        "ospf"
+      ],
+      "readingMinutes": 1,
+      "objectives": [
+        "ccna-v2:3.3.d"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "RFC 5340 — OSPF for IPv6",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc5340.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "router-id"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "order",
+          "prompt": "In che ordine Cisco IOS sceglie il Router ID OSPF?",
+          "answer": "1) Il valore configurato con `router-id`. 2) In mancanza, l'indirizzo IPv4 più alto tra le interfacce di loopback attive. 3) In mancanza, l'indirizzo IPv4 più alto tra le interfacce fisiche attive. La scelta avviene all'avvio del processo: per cambiarla serve `clear ip ospf process`.",
+          "keyPoints": [
+            "router-id manuale",
+            "Loopback più alta",
+            "Interfaccia fisica più alta",
+            "Serve clear ip ospf process"
+          ],
+          "commonMistakes": [
+            "Pensare che vinca la loopback più bassa",
+            "Aspettarsi che il RID cambi subito dopo il comando"
+          ]
+        },
+        {
+          "key": "v3",
+          "prompt": "Un router con sole interfacce IPv6 avvia OSPFv3 e il processo non parte. Perché?",
+          "answer": "Anche in OSPFv3 il Router ID resta un numero di 32 bit. Se il router non ha alcun indirizzo IPv4 da cui ricavarlo, bisogna configurarlo a mano con `router-id` nel processo `ipv6 router ospf`.",
+          "keyPoints": [
+            "RID a 32 bit anche in OSPFv3",
+            "Senza IPv4 va configurato a mano"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-dr-bdr",
+        "ospfv3-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Configurare OSPFv2 single area",
+      "summary": "Due modi per attivare OSPF sulle interfacce: il comando network con wildcard nel processo, oppure ip ospf area sull'interfaccia. Più passive-interface e default route.",
+      "body": "### Metodo 1: `network` con wildcard mask\n```\nR1(config)# router ospf 1\nR1(config-router)# router-id 1.1.1.1\nR1(config-router)# network 10.0.12.0 0.0.0.3 area 0\nR1(config-router)# network 192.168.1.0 0.0.0.255 area 0\nR1(config-router)# passive-interface gigabitEthernet0/1\n```\nIl comando `network` non annuncia una rete: **attiva OSPF sulle interfacce** il cui indirizzo rientra nell'intervallo. OSPF poi annuncia la subnet di quelle interfacce. `network 0.0.0.0 255.255.255.255 area 0` le attiva tutte.\n\n### Metodo 2: sull'interfaccia\n```\nR1(config)# interface gigabitEthernet0/0\nR1(config-if)# ip ospf 1 area 0\nR1(config-if)# ip ospf network point-to-point\n```\nPiù leggibile: la configurazione OSPF di ogni interfaccia è accanto alla sua configurazione IP.\n\n### Passive interface\n`passive-interface` smette di inviare Hello su un'interfaccia ma **continua ad annunciarne la subnet**. Si usa verso le LAN degli utenti, dove non ci sono router OSPF: evita adiacenze indesiderate.\n\n### Annunciare la default route\n```\nR1(config-router)# default-information originate\n```\nR1 annuncia la propria default route (statica, verso l'ISP) agli altri router OSPF.\n\n### Verifica\n```\nR1# show ip protocols\nR1# show ip ospf interface brief\nR1# show ip ospf neighbor\nR1# show ip route ospf\n```",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "ospf"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:3.3",
+        "ccna-v2:3.3.b",
+        "ccna-v2:3.3.d"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "configurazione",
+        "passive-interface"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "network",
+          "prompt": "Cosa fa esattamente `network 10.0.12.0 0.0.0.3 area 0`?",
+          "answer": "Attiva OSPF in area 0 su tutte le interfacce il cui indirizzo IP rientra in 10.0.12.0–10.0.12.3. Su quelle interfacce il router invia Hello, forma adiacenze e annuncia la subnet configurata. Non annuncia direttamente un prefisso.",
+          "keyPoints": [
+            "Seleziona interfacce",
+            "Wildcard 0.0.0.3 = 4 indirizzi",
+            "Annuncia la subnet dell'interfaccia"
+          ],
+          "commonMistakes": [
+            "Pensare che il comando annunci la rete scritta, anche senza interfacce corrispondenti"
+          ]
+        },
+        {
+          "key": "passive",
+          "prompt": "Perché si configura `passive-interface` sull'interfaccia LAN degli utenti, e cosa continua a succedere su quell'interfaccia?",
+          "answer": "Per non inviare Hello OSPF in una LAN dove non ci sono router: evita traffico inutile e impedisce che un dispositivo non autorizzato formi un'adiacenza. La subnet della LAN continua comunque a essere annunciata agli altri router.",
+          "keyPoints": [
+            "Niente Hello",
+            "La subnet resta annunciata"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-neighbors",
+        "ospf-troubleshooting",
+        "acl-wildcard"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospf-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: due router OSPF non diventano vicini",
+      "summary": "R1 e R2 sono collegati e si raggiungono con il ping, ma `show ip ospf neighbor` è vuoto. Come trovare il parametro che non coincide.",
+      "body": "### Situazione\n```\nR1# show ip ospf neighbor\nR1#\nR1# ping 10.0.12.2\n!!!!!\n```\nLa connettività IP c'è, l'adiacenza no.\n\n### Verifiche\n```\nR1# show ip ospf interface gigabitEthernet0/0\n  Internet Address 10.0.12.1/30, Area 0\n  Process ID 1, Router ID 1.1.1.1, Network Type POINT_TO_POINT, Cost: 1\n  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5\n\nR2# show ip ospf interface gigabitEthernet0/0\n  Internet Address 10.0.12.2/30, Area 1\n  Process ID 1, Router ID 2.2.2.2, Network Type POINT_TO_POINT, Cost: 1\n  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5\n```\n**Area diversa**: R1 in area 0, R2 in area 1. Gli Hello vengono scartati.\n\n### Lista di controllo\n| Controllo | Comando |\n|---|---|\n| OSPF attivo sull'interfaccia? | `show ip ospf interface brief` |\n| Interfaccia passiva? | `show ip protocols` (sezione Passive Interface) |\n| Area, timer, tipo di rete | `show ip ospf interface` |\n| Subnet e mask uguali | `show ip interface brief`, `show running-config interface` |\n| Router ID duplicato | `show ip protocols` su entrambi |\n| ACL che blocca OSPF (protocollo IP 89) | `show ip interface` |\n| Bloccati in EXSTART/EXCHANGE | confrontare l'MTU con `show interfaces` |\n\nIl comando `debug ip ospf hello` mostra il motivo esatto del rifiuto (ad esempio *Mismatched hello parameters*), ma va usato con cautela sui router in produzione.",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "ospf"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.3",
+        "ccna-v2:3.3.a",
+        "ccna-v2:2.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2328 — OSPF Version 2",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2328.html"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospf",
+        "troubleshooting",
+        "adiacenza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "exstart",
+          "prompt": "Due router OSPF restano bloccati in EXSTART/EXCHANGE. Qual è la causa più frequente?",
+          "answer": "Un MTU diverso sulle due interfacce. Gli Hello passano e i router arrivano a 2-Way, ma i pacchetti DBD sono rifiutati dal lato con MTU più piccolo e lo scambio non si completa.",
+          "keyPoints": [
+            "MTU mismatch",
+            "Gli Hello passano, i DBD no"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "steps",
+          "prompt": "R1 e R2 si pingano ma non sono vicini OSPF. Elenca, in ordine, cosa controlli.",
+          "answer": "Che OSPF sia attivo sulle interfacce e che non siano passive; che area, subnet/mask, Hello/Dead e tipo di rete coincidano; che i Router ID siano diversi; che l'autenticazione sia uguale; che nessuna ACL blocchi il protocollo 89 o il multicast 224.0.0.5. Se arrivano a ExStart, l'MTU.",
+          "keyPoints": [
+            "OSPF attivo e non passivo",
+            "Parametri Hello",
+            "RID unici",
+            "ACL"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-neighbors",
+        "ospf-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ospfv3-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "OSPFv3 per IPv6",
+      "summary": "OSPFv3 si attiva per interfaccia, usa gli indirizzi link-local per scambiarsi i pacchetti e mantiene un Router ID a 32 bit.",
+      "body": "```\nR1(config)# ipv6 unicast-routing\nR1(config)# ipv6 router ospf 1\nR1(config-rtr)# router-id 1.1.1.1\nR1(config-rtr)# exit\nR1(config)# interface gigabitEthernet0/0\nR1(config-if)# ipv6 address 2001:db8:12::1/64\nR1(config-if)# ipv6 ospf 1 area 0\nR1(config-if)# interface gigabitEthernet0/1\nR1(config-if)# ipv6 address 2001:db8:1::1/64\nR1(config-if)# ipv6 ospf 1 area 0\n```\n\n### Differenze principali rispetto a OSPFv2\n- Si attiva **sull'interfaccia** (`ipv6 ospf 1 area 0`); non esiste il comando `network`.\n- Funziona **per link** e non per subnet: due router possono diventare vicini anche se i loro indirizzi global sono in prefissi diversi.\n- I pacchetti partono dall'indirizzo **link-local** dell'interfaccia; per questo il next hop delle route OSPFv3 è un indirizzo fe80::.\n- Il **Router ID** resta a 32 bit: senza indirizzi IPv4 va configurato a mano.\n- Multicast: ff02::5 (tutti i router OSPF) e ff02::6 (DR e BDR).\n\n### Verifica\n```\nR1# show ipv6 ospf neighbor\nR1# show ipv6 route ospf\nO   2001:db8:3::/64 [110/2]\n     via FE80::2, GigabitEthernet0/0\n```\nI concetti di area, costo, DR/BDR e stati dei vicini sono gli stessi di OSPFv2.",
+      "trackId": "ccna",
+      "topicId": "ospf",
+      "difficulty": 2,
+      "prerequisites": [
+        "ospf",
+        "ipv6-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:3.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 5340 — OSPF for IPv6",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc5340.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ospfv3",
+        "ipv6",
+        "ospf"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "nexthop",
+          "prompt": "Perché in `show ipv6 route ospf` il next hop delle route OSPFv3 è un indirizzo fe80::?",
+          "answer": "Perché OSPFv3 invia i propri pacchetti usando l'indirizzo link-local dell'interfaccia come origine. Il router impara quindi i vicini tramite il loro link-local, che diventa il next hop delle route.",
+          "keyPoints": [
+            "Pacchetti OSPFv3 da link-local",
+            "Next hop = link-local del vicino"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ospf-config",
+        "ospf-router-id",
+        "ipv6-address-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "fhrp-hsrp-vrrp",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "HSRP e VRRP: un Default Gateway che non cade",
+      "summary": "Due router condividono un indirizzo IP e un MAC address virtuali. Gli host puntano al gateway virtuale; se il router attivo cade, il secondo subentra in pochi secondi.",
+      "body": "Un host ha un solo Default Gateway. Se quel router si guasta, la LAN resta isolata anche se un secondo router è collegato. Un **FHRP** (First Hop Redundancy Protocol) risolve il problema con un **indirizzo IP virtuale** e un **MAC address virtuale** condivisi tra più router.\n\n| | HSRP | VRRP (v3) |\n|---|---|---|\n| Standard | Cisco (RFC 2281 informativa) | IETF, RFC 9568 |\n| Ruoli | **Active** e **Standby** | **Master** (Active) e **Backup** |\n| Priorità di default | 100 | 100; 255 per il proprietario dell'indirizzo |\n| Preemption di default | **disattiva** | **attiva** |\n| MAC virtuale | 0000.0c07.acXX (HSRPv1, XX = gruppo) | 0000.5e00.01XX (XX = VRID) |\n| Multicast | 224.0.0.2 (v1), UDP 1985 | 224.0.0.18 |\n| Timer | Hello 3 s, Hold 10 s | Advertisement 1 s |\n\n### Come funziona il failover\n1. Il router con priorità più alta diventa Active e risponde agli ARP per l'IP virtuale con il **MAC virtuale**.\n2. Gli host continuano a usare lo stesso IP e lo stesso MAC del gateway: non devono aggiornare nulla.\n3. Se lo Standby non riceve più Hello per l'intervallo di hold, diventa Active e inizia a rispondere al MAC virtuale; invia un *gratuitous ARP* perché gli switch aggiornino la MAC Address Table.\n\n### Preemption\nSenza `preempt`, un router con priorità più alta che torna online **non** riprende il ruolo di Active. In HSRP va configurata esplicitamente se si vuole un ruolo deterministico.\n\nGLBP, un terzo protocollo Cisco, aggiunge il bilanciamento del carico tra più gateway; all'esame CCNA v2.0 l'obiettivo cita HSRP e VRRP.",
+      "trackId": "ccna",
+      "topicId": "fhrp",
+      "difficulty": 2,
+      "prerequisites": [
+        "routing-fundamentals",
+        "arp"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:3.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2281 — Cisco Hot Standby Router Protocol (HSRP)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2281.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 9568 — Virtual Router Redundancy Protocol (VRRP) Version 3 for IPv4 and IPv6",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc9568.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "fhrp",
+        "hsrp",
+        "vrrp",
+        "gateway"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "mac",
+          "prompt": "Perché un FHRP usa anche un MAC address virtuale e non solo un IP virtuale?",
+          "answer": "Perché gli host memorizzano nella cache ARP il MAC address del gateway. Se il gateway rispondesse con il MAC reale del router attivo, dopo un failover gli host continuerebbero a inviare frame al MAC del router guasto finché la cache non scade. Con un MAC virtuale condiviso il nuovo Active risponde allo stesso MAC e il passaggio è trasparente.",
+          "keyPoints": [
+            "Cache ARP degli host",
+            "MAC virtuale condiviso",
+            "Gratuitous ARP per aggiornare gli switch"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "preempt",
+          "prompt": "R1 (priorità 110) è HSRP Active, R2 (priorità 100) Standby. R1 si riavvia e torna online. Chi è Active? E con VRRP?",
+          "answer": "In HSRP resta Active R2, perché la preemption è disattiva per default: serve `standby <gruppo> preempt` su R1. In VRRP la preemption è attiva per default, quindi R1 torna Master.",
+          "keyPoints": [
+            "HSRP: preempt disattivo di default",
+            "VRRP: preempt attivo di default"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "hsrp-show-standby",
+        "arp-resolution"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "hsrp-show-standby",
+      "revision": 1,
+      "kind": "output_analysis",
+      "language": "it",
+      "title": "Interpretare `show standby brief`",
+      "summary": "Lo stato HSRP di ogni router in una riga: gruppo, priorità, preemption, ruolo, indirizzo del router attivo, dello standby e IP virtuale.",
+      "body": "```\nR1# show standby brief\n                     P indicates configured to preempt.\n                     |\nInterface   Grp  Pri P State   Active          Standby         Virtual IP\nGi0/1       10   110 P Active  local           192.168.10.3    192.168.10.1\n\nR2# show standby brief\nInterface   Grp  Pri P State   Active          Standby         Virtual IP\nGi0/1       10   100   Standby 192.168.10.2    local           192.168.10.1\n```\n\n| Colonna | R1 | Significato |\n|---|---|---|\n| Grp | 10 | Numero del gruppo HSRP (deve coincidere sui due router) |\n| Pri | 110 | Priorità; vince la più alta |\n| P | P | Preemption configurata |\n| State | Active | Ruolo attuale |\n| Active / Standby | local / .3 | Chi ha i due ruoli; `local` = questo router |\n| Virtual IP | .1 | L'indirizzo da usare come Default Gateway degli host |\n\n### Configurazione che produce questo output\n```\nR1(config)# interface gigabitEthernet0/1\nR1(config-if)# ip address 192.168.10.2 255.255.255.0\nR1(config-if)# standby version 2\nR1(config-if)# standby 10 ip 192.168.10.1\nR1(config-if)# standby 10 priority 110\nR1(config-if)# standby 10 preempt\n```\n\n### Segnali di problemi\n- Entrambi i router **Active**: non si vedono gli Hello (VLAN diversa, ACL, gruppo diverso). Si genera un conflitto sull'IP virtuale.\n- **Virtual IP** diverso sui due router: configurazione incoerente.\n- State **Init** che non cambia: l'interfaccia è down o la configurazione del gruppo è incompleta. **Listen** è invece normale per un terzo router del gruppo, che non è né Active né Standby.",
+      "trackId": "ccna",
+      "topicId": "fhrp",
+      "difficulty": 2,
+      "prerequisites": [
+        "fhrp"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:3.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2281 — Cisco Hot Standby Router Protocol (HSRP)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2281.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "hsrp",
+        "output",
+        "show-standby"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "both-active",
+          "prompt": "Su R1 e R2 `show standby brief` mostra State Active per lo stesso gruppo. Cosa significa e cosa controlli?",
+          "answer": "I due router non ricevono gli Hello HSRP l'uno dell'altro, quindi ciascuno si considera Active. Si controlla che le interfacce siano nella stessa VLAN e subnet, che numero di gruppo e versione HSRP coincidano e che nessuna ACL blocchi il multicast HSRP.",
+          "keyPoints": [
+            "Hello non ricevuti",
+            "Stessa VLAN, gruppo, versione",
+            "ACL"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "fhrp-hsrp-vrrp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    }
+  ]
+}
