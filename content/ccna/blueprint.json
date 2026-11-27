@@ -1,0 +1,338 @@
+{
+  "id": "ccna-200-301-v2",
+  "exam": "Implementing and Administering Cisco Solutions (200-301 CCNA)",
+  "version": "2.0",
+  "sourceDocument": "CCNA_200-301_v2.0_Official_Blueprint.pdf (Cisco Public, 2026)",
+  "domains": [
+    {
+      "code": "1.0",
+      "title": "Network Infrastructure and Connectivity",
+      "weight": 25,
+      "objectives": [
+        {
+          "id": "ccna-v2:1.1",
+          "code": "1.1",
+          "title": "Diagnose interface and cable (copper and fiber) issues such as collisions, errors, mismatched duplex, speed, distance, interface, signal levels, pin out, and cable types"
+        },
+        {
+          "id": "ccna-v2:1.2",
+          "code": "1.2",
+          "title": "Describe the role and function of hypervisors, virtual machines, and containers"
+        },
+        {
+          "id": "ccna-v2:1.3",
+          "code": "1.3",
+          "title": "Troubleshoot IPv4 address configuration, assignment, and subnetting (public and private)"
+        },
+        {
+          "id": "ccna-v2:1.4",
+          "code": "1.4",
+          "title": "Troubleshoot IPv6 address configuration, assignment, and prefix sizing (unicast and modified EUI 64)"
+        },
+        {
+          "id": "ccna-v2:1.5",
+          "code": "1.5",
+          "title": "Describe wireless principles"
+        },
+        {
+          "id": "ccna-v2:1.5.a",
+          "code": "1.5.a",
+          "title": "Band and channel selection"
+        },
+        {
+          "id": "ccna-v2:1.5.b",
+          "code": "1.5.b",
+          "title": "RF characteristics"
+        },
+        {
+          "id": "ccna-v2:1.5.c",
+          "code": "1.5.c",
+          "title": "Security protocols"
+        },
+        {
+          "id": "ccna-v2:1.5.d",
+          "code": "1.5.d",
+          "title": "Cause of interference"
+        },
+        {
+          "id": "ccna-v2:1.6",
+          "code": "1.6",
+          "title": "Troubleshoot wired and wireless client connectivity (IP configuration, network reachability, and wireless security parameters on Windows, MacOS, and Linux)"
+        },
+        {
+          "id": "ccna-v2:1.7",
+          "code": "1.7",
+          "title": "Troubleshoot DHCPv4 client, server, and relay on IOS devices"
+        }
+      ]
+    },
+    {
+      "code": "2.0",
+      "title": "Switching and Network Access",
+      "weight": 25,
+      "objectives": [
+        {
+          "id": "ccna-v2:2.1",
+          "code": "2.1",
+          "title": "Configure network infrastructure connectivity (switch-to-switch and switch-to-router)"
+        },
+        {
+          "id": "ccna-v2:2.1.a",
+          "code": "2.1.a",
+          "title": "Layer 2/Layer 3 physical interfaces"
+        },
+        {
+          "id": "ccna-v2:2.1.b",
+          "code": "2.1.b",
+          "title": "Layer 2 802.1Q trunk interfaces"
+        },
+        {
+          "id": "ccna-v2:2.1.c",
+          "code": "2.1.c",
+          "title": "Layer 2/Layer 3 LACP port-channel/EtherChannel"
+        },
+        {
+          "id": "ccna-v2:2.1.d",
+          "code": "2.1.d",
+          "title": "Switch virtual interface (SVI)"
+        },
+        {
+          "id": "ccna-v2:2.2",
+          "code": "2.2",
+          "title": "Configure Layer 2 switch port attributes for edge-host connectivity (VLAN, PoE, port channel, and LACP)"
+        },
+        {
+          "id": "ccna-v2:2.2.a",
+          "code": "2.2.a",
+          "title": "Desktop, printer, and IOT appliances"
+        },
+        {
+          "id": "ccna-v2:2.2.b",
+          "code": "2.2.b",
+          "title": "Wireless access points (standalone and controller based)"
+        },
+        {
+          "id": "ccna-v2:2.2.c",
+          "code": "2.2.c",
+          "title": "Voice over IP phone"
+        },
+        {
+          "id": "ccna-v2:2.2.d",
+          "code": "2.2.d",
+          "title": "Virtualized hosts"
+        },
+        {
+          "id": "ccna-v2:2.2.e",
+          "code": "2.2.e",
+          "title": "Network appliances"
+        },
+        {
+          "id": "ccna-v2:2.3",
+          "code": "2.3",
+          "title": "Validate the accuracy of network documentation using CDP and LLDP"
+        },
+        {
+          "id": "ccna-v2:2.4",
+          "code": "2.4",
+          "title": "Troubleshoot basic Layer 2/Layer 3 connectivity and device operations using show commands (including show logs), ping, extended ping, trace route, and packet capture output"
+        },
+        {
+          "id": "ccna-v2:2.5",
+          "code": "2.5",
+          "title": "Configure operations of the Rapid Per VLAN Spanning Tree Protocol (Rapid PVST+)"
+        },
+        {
+          "id": "ccna-v2:2.5.a",
+          "code": "2.5.a",
+          "title": "Root port, root bridge (primary/secondary), and other port names"
+        },
+        {
+          "id": "ccna-v2:2.5.b",
+          "code": "2.5.b",
+          "title": "Port states and roles"
+        },
+        {
+          "id": "ccna-v2:2.5.c",
+          "code": "2.5.c",
+          "title": "PortFast"
+        },
+        {
+          "id": "ccna-v2:2.5.d",
+          "code": "2.5.d",
+          "title": "Root guard, loop guard, and BPDU guard"
+        }
+      ]
+    },
+    {
+      "code": "3.0",
+      "title": "IP Routing",
+      "weight": 20,
+      "objectives": [
+        {
+          "id": "ccna-v2:3.1",
+          "code": "3.1",
+          "title": "Interpret a routing table to identify the next hop for a packet (routing protocol, prefix/mask, administrative distance, metric, and default route)"
+        },
+        {
+          "id": "ccna-v2:3.2",
+          "code": "3.2",
+          "title": "Troubleshoot IPv4 and IPv6 static routing"
+        },
+        {
+          "id": "ccna-v2:3.2.a",
+          "code": "3.2.a",
+          "title": "Default route"
+        },
+        {
+          "id": "ccna-v2:3.2.b",
+          "code": "3.2.b",
+          "title": "Network route"
+        },
+        {
+          "id": "ccna-v2:3.2.c",
+          "code": "3.2.c",
+          "title": "Host route"
+        },
+        {
+          "id": "ccna-v2:3.2.d",
+          "code": "3.2.d",
+          "title": "Floating static"
+        },
+        {
+          "id": "ccna-v2:3.3",
+          "code": "3.3",
+          "title": "Configure single area OSPFv2 for IPv4 and OSPFv3 for IPv6"
+        },
+        {
+          "id": "ccna-v2:3.3.a",
+          "code": "3.3.a",
+          "title": "Neighbor adjacencies (excluding authentication)"
+        },
+        {
+          "id": "ccna-v2:3.3.b",
+          "code": "3.3.b",
+          "title": "Point-to-point"
+        },
+        {
+          "id": "ccna-v2:3.3.c",
+          "code": "3.3.c",
+          "title": "Broadcast (DR/BDR selection)"
+        },
+        {
+          "id": "ccna-v2:3.3.d",
+          "code": "3.3.d",
+          "title": "Router ID"
+        },
+        {
+          "id": "ccna-v2:3.4",
+          "code": "3.4",
+          "title": "Interpret the operational status of First Hop Redundancy Protocols (HSRP and VRRP)"
+        }
+      ]
+    },
+    {
+      "code": "4.0",
+      "title": "Network Services and Security",
+      "weight": 20,
+      "objectives": [
+        {
+          "id": "ccna-v2:4.1",
+          "code": "4.1",
+          "title": "Configure network devices with local usernames and as an AAA client (TACACS+ and RADIUS) for management"
+        },
+        {
+          "id": "ccna-v2:4.2",
+          "code": "4.2",
+          "title": "Manage device configuration and software files using secure file transfer operations with SFTP/SCP"
+        },
+        {
+          "id": "ccna-v2:4.3",
+          "code": "4.3",
+          "title": "Configure NAT/PAT on IOS XE routers"
+        },
+        {
+          "id": "ccna-v2:4.4",
+          "code": "4.4",
+          "title": "Diagnose issues with DNS records (A, AAAA, CNAME, MX, NS, and PTR) to support host, web application, and mail server access by name"
+        },
+        {
+          "id": "ccna-v2:4.5",
+          "code": "4.5",
+          "title": "Describe IPsec remote access and site-to-site VPNs (protocols and transport modes)"
+        },
+        {
+          "id": "ccna-v2:4.6",
+          "code": "4.6",
+          "title": "Configure IPv4 access control lists (standard, extended, numbered, and named ACLs)"
+        },
+        {
+          "id": "ccna-v2:4.7",
+          "code": "4.7",
+          "title": "Configure Layer 2 security features"
+        },
+        {
+          "id": "ccna-v2:4.7.a",
+          "code": "4.7.a",
+          "title": "DHCP snooping"
+        },
+        {
+          "id": "ccna-v2:4.7.b",
+          "code": "4.7.b",
+          "title": "Dynamic ARP inspection"
+        },
+        {
+          "id": "ccna-v2:4.7.c",
+          "code": "4.7.c",
+          "title": "Storm control"
+        },
+        {
+          "id": "ccna-v2:4.7.d",
+          "code": "4.7.d",
+          "title": "RA guard"
+        },
+        {
+          "id": "ccna-v2:4.7.e",
+          "code": "4.7.e",
+          "title": "Port security"
+        }
+      ]
+    },
+    {
+      "code": "5.0",
+      "title": "AI, and Network Operations and Management",
+      "weight": 10,
+      "objectives": [
+        {
+          "id": "ccna-v2:5.1",
+          "code": "5.1",
+          "title": "Describe the role of agentic AI in network operations"
+        },
+        {
+          "id": "ccna-v2:5.2",
+          "code": "5.2",
+          "title": "Select a prompt to send to a generative AI system to support network operations considering prompt components such as data classification, output format, persona, and instructions"
+        },
+        {
+          "id": "ccna-v2:5.3",
+          "code": "5.3",
+          "title": "Describe network management approaches (device-based, cloud-based, controller-based, automation-based, and infrastructure as code)"
+        },
+        {
+          "id": "ccna-v2:5.4",
+          "code": "5.4",
+          "title": "Describe the function of SNMP in network operations"
+        },
+        {
+          "id": "ccna-v2:5.5",
+          "code": "5.5",
+          "title": "Use configuration management mechanisms such as Ansible to execute commands"
+        },
+        {
+          "id": "ccna-v2:5.6",
+          "code": "5.6",
+          "title": "Interpret syslog message content, severity levels, and facilities"
+        }
+      ]
+    }
+  ]
+}

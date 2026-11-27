@@ -1,0 +1,74 @@
+{
+  "id": "ccna",
+  "title": "Cisco CCNA 200-301 v2.0",
+  "summary": "Fondamenti di networking, switching, routing, servizi e sicurezza secondo il blueprint ufficiale CCNA v2.0.",
+  "blueprintId": "ccna-200-301-v2",
+  "modules": [
+    {
+      "id": "network-fundamentals",
+      "title": "Fondamenti di rete",
+      "summary": "Dispositivi, topologie, architetture e modelli a livelli.",
+      "topics": [
+        { "id": "network-devices", "title": "Dispositivi di rete", "summary": "Router, switch, firewall, access point, endpoint e server: ruolo e livello di funzionamento.", "prerequisites": [], "objectives": [] },
+        { "id": "network-topologies", "title": "Topologie e architetture", "summary": "Star, mesh, two-tier, three-tier, spine-leaf, SOHO, WAN e cloud.", "prerequisites": ["network-devices"], "objectives": [] },
+        { "id": "osi-tcpip", "title": "Modello OSI e TCP/IP", "summary": "Livelli, incapsulamento, PDU e corrispondenza tra i due modelli.", "prerequisites": ["network-devices"], "objectives": [] }
+      ]
+    },
+    {
+      "id": "ethernet-switching",
+      "title": "Ethernet e switching",
+      "summary": "Frame Ethernet, MAC address, cablaggio e funzionamento dello switch.",
+      "topics": [
+        { "id": "ethernet-lan", "title": "Ethernet, cavi e interfacce", "summary": "Standard Ethernet, rame e fibra, duplex, speed e problemi di interfaccia.", "prerequisites": ["osi-tcpip"], "objectives": ["ccna-v2:1.1"] },
+        { "id": "mac-addressing", "title": "MAC address e frame Ethernet", "summary": "Struttura del frame, indirizzi unicast, broadcast e multicast.", "prerequisites": ["osi-tcpip"], "objectives": [] },
+        { "id": "switching-fundamentals", "title": "Switching: learning, forwarding, flooding", "summary": "MAC Address Table, inoltro dei frame, flooding e Broadcast Domain.", "prerequisites": ["mac-addressing"], "objectives": ["ccna-v2:2.4"] }
+      ]
+    },
+    {
+      "id": "ip-addressing",
+      "title": "Indirizzamento IP",
+      "summary": "IPv4, subnetting, IPv6 e protocolli di supporto al livello 3.",
+      "topics": [
+        { "id": "ipv4-addressing", "title": "Indirizzamento IPv4", "summary": "Struttura dell'indirizzo, Subnet Mask, indirizzi pubblici e privati.", "prerequisites": ["osi-tcpip"], "objectives": ["ccna-v2:1.3"] },
+        { "id": "subnetting", "title": "Subnetting IPv4", "summary": "Calcolo di network, broadcast, host utilizzabili e VLSM.", "prerequisites": ["ipv4-addressing"], "objectives": ["ccna-v2:1.3"] },
+        { "id": "arp", "title": "ARP", "summary": "Risoluzione da indirizzo IPv4 a MAC address all'interno della subnet.", "prerequisites": ["ipv4-addressing", "mac-addressing"], "objectives": [] },
+        { "id": "icmp", "title": "ICMP, ping e traceroute", "summary": "Messaggi ICMP e strumenti di verifica della raggiungibilità.", "prerequisites": ["ipv4-addressing"], "objectives": ["ccna-v2:2.4"] },
+        { "id": "ipv6-fundamentals", "title": "Fondamenti di IPv6", "summary": "Formato, abbreviazione, tipi di indirizzo, prefissi e EUI-64.", "prerequisites": ["ipv4-addressing"], "objectives": ["ccna-v2:1.4"] }
+      ]
+    },
+    {
+      "id": "routing-basics",
+      "title": "Routing",
+      "summary": "Come un router decide il next hop.",
+      "topics": [
+        { "id": "routing-fundamentals", "title": "Fondamenti di routing", "summary": "Routing Table, longest prefix match, route connesse, statiche e default.", "prerequisites": ["subnetting"], "objectives": ["ccna-v2:3.1"] }
+      ]
+    },
+    {
+      "id": "transport-services",
+      "title": "Trasporto e servizi",
+      "summary": "TCP, UDP e i servizi che rendono utilizzabile una rete.",
+      "topics": [
+        { "id": "tcp-udp", "title": "TCP e UDP", "summary": "Porte, Three-Way Handshake, affidabilità e casi d'uso.", "prerequisites": ["osi-tcpip"], "objectives": [] },
+        { "id": "dns", "title": "DNS", "summary": "Risoluzione dei nomi e tipi di record.", "prerequisites": ["tcp-udp"], "objectives": ["ccna-v2:4.4"] },
+        { "id": "dhcp", "title": "DHCP", "summary": "Assegnazione automatica della configurazione IP, processo DORA e relay.", "prerequisites": ["ipv4-addressing", "tcp-udp"], "objectives": ["ccna-v2:1.7"] }
+      ]
+    },
+    {
+      "id": "cisco-ios",
+      "title": "Cisco IOS",
+      "summary": "CLI, modalità, configurazione e comandi di verifica.",
+      "topics": [
+        { "id": "ios-fundamentals", "title": "Fondamenti di Cisco IOS", "summary": "Modalità della CLI, running e startup config, comandi show essenziali.", "prerequisites": ["network-devices"], "objectives": ["ccna-v2:2.4"] }
+      ]
+    },
+    {
+      "id": "security-basics",
+      "title": "Sicurezza di rete",
+      "summary": "Concetti di base prima delle funzionalità specifiche.",
+      "topics": [
+        { "id": "security-fundamentals", "title": "Fondamenti di Network Security", "summary": "Minacce, vulnerabilità, exploit, mitigazioni e principi di difesa.", "prerequisites": ["network-devices"], "objectives": [] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,968 @@
+{
+  "format": "netflow.content-package",
+  "schemaVersion": 1,
+  "package": {
+    "id": "netflow-core-ccna-001",
+    "title": "NetFlow — Libreria iniziale CCNA (lotto 1)",
+    "language": "it",
+    "generator": "NetFlow seed curato",
+    "createdAt": "2026-11-27",
+    "notes": "Contenuti originali. Le fonti con verifiedOn sono state consultate il 2026-11-27; le altre sono riferimenti da verificare."
+  },
+  "items": [
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [],
+      "objectives": [],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "switch",
+        "router",
+        "livelli"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "broadcast",
+          "prompt": "Perché un router separa i Broadcast Domain mentre uno switch no?",
+          "answer": "Uno switch inoltra i frame broadcast (destinazione FF:FF:FF:FF:FF:FF) su tutte le porte della stessa VLAN, quindi tutti gli host della VLAN condividono lo stesso Broadcast Domain. Un router invece non inoltra i broadcast di livello 2 da un'interfaccia all'altra: ogni interfaccia del router delimita un Broadcast Domain diverso.",
+          "keyPoints": [
+            "Lo switch fa flooding dei broadcast nella VLAN",
+            "Il router non inoltra i broadcast tra interfacce",
+            "Ogni interfaccia del router è un Broadcast Domain separato"
+          ],
+          "commonMistakes": [
+            "Pensare che lo switch separi i Broadcast Domain: separa i Collision Domain (una porta = un Collision Domain), non i Broadcast Domain"
+          ]
+        }
+      ],
+      "related": [
+        "switch-mac-learning",
+        "routing-longest-prefix"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "router-vs-switch",
+      "kind": "comparison",
+      "title": "Switch e router: due decisioni diverse",
+      "summary": "Lo switch decide su quale porta inoltrare un frame dentro la LAN. Il router decide verso quale rete inoltrare un pacchetto. Confonderli porta a errori di progettazione e di troubleshooting.",
+      "topicId": "network-devices",
+      "readingMinutes": 3,
+      "body": "Uno **switch** lavora al livello 2: legge il **MAC address di destinazione** del frame Ethernet e lo inoltra sulla porta giusta all'interno della stessa LAN (e della stessa VLAN). Non sa nulla di reti IP diverse.\n\nUn **router** lavora al livello 3: legge l'**indirizzo IP di destinazione** del pacchetto, consulta la **Routing Table** e lo inoltra verso il next hop. È il dispositivo che collega reti diverse e che separa i Broadcast Domain.\n\n| | Switch | Router |\n|---|---|---|\n| Livello | 2 (Data Link) | 3 (Network) |\n| Indirizzo usato | MAC address | indirizzo IP |\n| Tabella | MAC Address Table | Routing Table |\n| Broadcast | li inoltra a tutte le porte della VLAN | non li inoltra tra interfacce |\n| Ambito | dentro una LAN | tra reti diverse |\n\n### Perché conta nella pratica\nQuando due PC nella stessa subnet non comunicano, il problema va cercato soprattutto al livello 2: cavo, porta, VLAN, MAC Address Table. Quando non comunicano PC di subnet diverse, entra in gioco anche il Default Gateway, cioè il router.\n\nEsistono anche switch **multilayer** (Layer 3 switch) che eseguono il routing in hardware: la distinzione tra le due *funzioni* resta valida anche quando stanno nello stesso dispositivo.",
+      "sources": [
+        {
+          "title": "RFC 1812 — Requirements for IP Version 4 Routers",
+          "url": "https://www.rfc-editor.org/rfc/rfc1812",
+          "publisher": "RFC Editor",
+          "type": "rfc"
+        },
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "network-devices"
+      ],
+      "objectives": [],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "osi",
+        "tcp-ip",
+        "pdu"
+      ],
+      "diagrams": [
+        {
+          "id": "osi-tcpip-stack",
+          "caption": "Modello OSI e modello TCP/IP con le PDU di ciascun livello."
+        }
+      ],
+      "recall": [
+        {
+          "key": "mac-change",
+          "prompt": "Un pacchetto attraversa due router per raggiungere un server. Quali indirizzi cambiano a ogni hop e quali restano uguali? Perché?",
+          "answer": "Cambiano i MAC address di origine e destinazione, perché ogni router de-incapsula il frame ricevuto e ne costruisce uno nuovo per il collegamento successivo, usando il proprio MAC come origine e il MAC del next hop come destinazione. Restano invariati gli indirizzi IP di origine e destinazione, che identificano gli estremi della comunicazione (in assenza di NAT). Il router modifica comunque alcuni campi dell'header IP, come il TTL.",
+          "keyPoints": [
+            "I MAC address hanno validità solo sul singolo collegamento",
+            "Gli indirizzi IP identificano gli estremi end-to-end",
+            "Il router ricostruisce il frame a ogni hop",
+            "Il TTL viene decrementato a ogni hop"
+          ],
+          "commonMistakes": [
+            "Pensare che il MAC di destinazione sia quello del server remoto: è quello del next hop (spesso il Default Gateway)"
+          ]
+        }
+      ],
+      "related": [
+        "ethernet-frame-structure",
+        "router-vs-switch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "osi-encapsulation",
+      "kind": "lesson",
+      "title": "Incapsulamento: cosa aggiunge ogni livello",
+      "summary": "Mentre i dati scendono lungo lo stack, ogni livello aggiunge le proprie informazioni di controllo. Capire l'incapsulamento significa sapere quale dispositivo legge quale header.",
+      "topicId": "osi-tcpip",
+      "readingMinutes": 4,
+      "body": "Il **modello OSI** descrive la comunicazione in sette livelli; il **modello TCP/IP**, usato realmente su Internet, li raggruppa in quattro (o cinque, nella versione didattica che separa livello fisico e Data Link).\n\nQuando un'applicazione invia dati, ogni livello aggiunge un proprio header:\n\n1. **Trasporto** (TCP o UDP) aggiunge le porte di origine e destinazione: la PDU si chiama **segment** (TCP) o datagram (UDP).\n2. **Network** (IP) aggiunge gli indirizzi IP di origine e destinazione: la PDU è il **packet**.\n3. **Data Link** (Ethernet) aggiunge i MAC address e il trailer FCS: la PDU è il **frame**.\n4. **Fisico**: il frame viene trasmesso come **bit** sul mezzo.\n\nIl destinatario esegue il processo inverso, la **de-incapsulamento**: ogni livello legge il proprio header, lo rimuove e passa il contenuto al livello superiore.\n\n### Perché è utile\nOgni dispositivo \"apre\" il pacchetto solo fino al livello in cui lavora. Uno switch legge l'header Ethernet; un router rimuove l'header Ethernet, legge quello IP, decide il next hop e **costruisce un nuovo frame** per il collegamento successivo. Per questo i MAC address cambiano a ogni hop, mentre gli indirizzi IP di origine e destinazione restano gli stessi (senza NAT).\n\nQuesto è anche il metodo di troubleshooting più solido: procedere per livelli, dal fisico in su, invece di provare soluzioni a caso.",
+      "sources": [
+        {
+          "title": "RFC 1122 — Requirements for Internet Hosts — Communication Layers",
+          "url": "https://www.rfc-editor.org/rfc/rfc1122",
+          "publisher": "RFC Editor",
+          "type": "rfc"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "osi-tcpip"
+      ],
+      "objectives": [
+        "ccna-v2:1.1"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ethernet",
+        "frame",
+        "mac"
+      ],
+      "diagrams": [
+        {
+          "id": "ethernet-frame",
+          "caption": "Campi del frame Ethernet II con dimensioni in byte."
+        }
+      ],
+      "recall": [
+        {
+          "key": "min-size",
+          "prompt": "Perché un frame Ethernet ha una dimensione minima di 64 byte e da quali campi è composta?",
+          "answer": "I 64 byte si ottengono da header (Destination MAC 6 + Source MAC 6 + Type 2 = 14 byte), payload minimo di 46 byte e FCS di 4 byte. Preamble e SFD non sono conteggiati. Se il payload è più corto di 46 byte viene aggiunto padding. Il minimo deriva storicamente dalla necessità di rilevare le collisioni nelle reti half-duplex condivise.",
+          "keyPoints": [
+            "14 + 46 + 4 = 64 byte",
+            "Preamble e SFD esclusi dal conteggio",
+            "Payload corto ⇒ padding",
+            "Frame sotto i 64 byte = runt"
+          ],
+          "commonMistakes": [
+            "Includere preamble e SFD nel calcolo dei 64 byte"
+          ]
+        },
+        {
+          "key": "fcs",
+          "prompt": "Cosa fa uno switch quando l'FCS di un frame ricevuto non è corretto?",
+          "answer": "Scarta il frame e incrementa il contatore degli errori CRC dell'interfaccia. Ethernet rileva gli errori ma non li corregge e non ritrasmette: l'eventuale recupero spetta ai protocolli dei livelli superiori, come TCP.",
+          "keyPoints": [
+            "Frame scartato",
+            "Contatore CRC incrementato",
+            "Nessuna ritrasmissione a livello 2"
+          ],
+          "commonMistakes": [
+            "Pensare che Ethernet richieda la ritrasmissione del frame"
+          ]
+        }
+      ],
+      "related": [
+        "switch-mac-learning",
+        "osi-encapsulation"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "ethernet-frame-structure",
+      "kind": "lesson",
+      "title": "Anatomia del frame Ethernet",
+      "summary": "Preambolo, SFD, MAC di destinazione e di origine, Type, payload e FCS: cosa contiene ogni campo e perché la destinazione viene prima dell'origine.",
+      "topicId": "mac-addressing",
+      "readingMinutes": 4,
+      "body": "Un frame **Ethernet II** è composto da:\n\n| Campo | Byte | Funzione |\n|---|---|---|\n| Preamble | 7 | sequenza alternata di 1 e 0 che permette la sincronizzazione |\n| SFD | 1 | Start Frame Delimiter: segnala l'inizio del frame vero e proprio |\n| Destination MAC | 6 | a chi è destinato il frame |\n| Source MAC | 6 | chi ha inviato il frame |\n| Type / Length | 2 | il protocollo incapsulato (es. 0x0800 = IPv4, 0x86DD = IPv6) oppure la lunghezza |\n| Payload | 46–1500 | il pacchetto di livello 3 |\n| FCS | 4 | Frame Check Sequence: un CRC per rilevare errori |\n\nPreamble e SFD spesso non vengono conteggiati nella dimensione del frame. Escludendoli, header (14 byte) + FCS (4 byte) = 18 byte; con il payload minimo di 46 byte si ottiene la **dimensione minima di 64 byte**. Un frame più corto è un **runt**.\n\n### Perché la destinazione viene prima\nLo switch può iniziare a decidere dove inoltrare il frame appena ha letto i primi 6 byte dopo l'SFD. Lo sfrutta la modalità *cut-through*, che inoltra prima di aver ricevuto l'intero frame.\n\n### FCS: rileva, non corregge\nSe il CRC calcolato non coincide con l'FCS, il frame viene **scartato**. Ethernet non ritrasmette: se serve, lo farà un livello superiore (per esempio TCP). Contatori di errori CRC in crescita su un'interfaccia indicano spesso problemi fisici: cavo danneggiato, interferenze o duplex mismatch.",
+      "sources": [
+        {
+          "title": "IEEE 802.3 — Ethernet",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "mac-addressing"
+      ],
+      "objectives": [
+        "ccna-v2:2.4"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "switching",
+        "mac-address-table",
+        "flooding"
+      ],
+      "diagrams": [
+        {
+          "id": "mac-learning",
+          "caption": "Segui passo per passo come la MAC Address Table si popola."
+        }
+      ],
+      "recall": [
+        {
+          "key": "why-source",
+          "prompt": "Perché uno switch apprende il MAC address di origine e non quello di destinazione?",
+          "answer": "Il MAC address di origine dice con certezza che quell'host è raggiungibile tramite la porta da cui è arrivato il frame. Il MAC di destinazione indica solo dove il mittente vuole arrivare, non dove si trova il destinatario. Lo switch usa quindi l'origine per costruire la tabella e la destinazione per decidere l'inoltro.",
+          "keyPoints": [
+            "Origine = prova della posizione dell'host",
+            "Destinazione = decisione di inoltro",
+            "Associazione MAC → porta (e VLAN)"
+          ],
+          "commonMistakes": [
+            "Pensare che lo switch \"chieda\" la posizione dei MAC: l'apprendimento è passivo"
+          ]
+        }
+      ],
+      "related": [
+        "unknown-unicast-flooding",
+        "ethernet-frame-structure"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "switch-mac-learning",
+      "kind": "lesson",
+      "title": "Come uno switch apprende i MAC address",
+      "summary": "Uno switch costruisce la MAC Address Table osservando il MAC address di origine dei frame ricevuti. Il MAC di destinazione serve invece a decidere dove inoltrare.",
+      "topicId": "switching-fundamentals",
+      "readingMinutes": 4,
+      "body": "Uno switch apprende i MAC address di origine dei frame Ethernet ricevuti e li memorizza nella **MAC Address Table**, associandoli alla porta di ingresso. Se l'indirizzo MAC di destinazione è sconosciuto, lo switch esegue il **flooding** del frame all'interno della stessa VLAN.\n\nLe due operazioni usano campi diversi del frame:\n\n- **Learning** → MAC address di **origine**: \"chi ha inviato questo frame si trova dietro questa porta\".\n- **Forwarding** → indirizzo MAC di **destinazione**: \"su quale porta devo inoltrarlo?\".\n\nPer la destinazione ci sono tre casi:\n\n1. **Known unicast**: il MAC è nella tabella → il frame esce solo dalla porta associata.\n2. **Unknown unicast**: il MAC non è nella tabella → flooding su tutte le porte della VLAN tranne quella di ingresso.\n3. **Broadcast** (FF:FF:FF:FF:FF:FF) → sempre flooding nella VLAN.\n\nSe la porta associata alla destinazione coincide con quella di ingresso, il frame viene scartato (*filtering*).\n\n### Aging\nLe voci apprese dinamicamente scadono se non vengono rinnovate: su molti switch Cisco l'aging time predefinito è di 300 secondi. In questo modo la tabella si adatta quando un host viene spostato su un'altra porta.\n\n```\nSW1# show mac address-table dynamic\n          Mac Address Table\n-------------------------------------------\nVlan    Mac Address       Type        Ports\n----    -----------       --------    -----\n  10    0050.7966.6801    DYNAMIC     Gi0/1\n  10    0050.7966.6802    DYNAMIC     Gi0/2\n```\n\n### In azienda\nSe un host risulta appreso su una porta inattesa (per esempio la porta di uplink), il frame sta arrivando da un altro switch: è il punto di partenza per capire dove si trova fisicamente un dispositivo.",
+      "sources": [
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "Cisco IOS Configuration Fundamentals Command Reference",
+          "publisher": "Cisco",
+          "type": "vendor_docs"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "mac-addressing"
+      ],
+      "objectives": [
+        "ccna-v2:2.4"
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "switching",
+        "flooding"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "scenario",
+          "prompt": "Descrivi cosa fa SW1 con il primo frame di PC-A e cosa cambia nella MAC Address Table. Su quali porte esce il frame?",
+          "answer": "SW1 registra il MAC address di origine di PC-A associato a Gi0/1 nella VLAN 10. Il MAC di destinazione (PC-B) non è in tabella: è un unknown unicast, quindi SW1 esegue il flooding su tutte le porte della VLAN 10 tranne quella di ingresso, cioè Gi0/2, Gi0/3 e Gi0/4. Gi0/5 non riceve nulla perché appartiene alla VLAN 20. Quando PC-B risponderà, SW1 apprenderà il suo MAC su Gi0/3 e il traffico successivo sarà inoltrato solo tra Gi0/1 e Gi0/3.",
+          "keyPoints": [
+            "Learning del MAC di origine su Gi0/1",
+            "Unknown unicast ⇒ flooding",
+            "Flooding limitato alla VLAN, esclusa la porta di ingresso",
+            "La risposta di PC-B completa la tabella"
+          ],
+          "commonMistakes": [
+            "Includere Gi0/5: il flooding non attraversa le VLAN",
+            "Includere la porta di ingresso Gi0/1",
+            "Confondere unknown unicast con broadcast: il frame resta unicast, solo l'inoltro è a tutte le porte"
+          ]
+        }
+      ],
+      "related": [
+        "switch-mac-learning"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "unknown-unicast-flooding",
+      "kind": "recall",
+      "title": "Destinazione sconosciuta: cosa fa lo switch?",
+      "summary": "Scenario di active recall sul comportamento dello switch con un MAC address di destinazione non presente nella tabella.",
+      "topicId": "switching-fundamentals",
+      "readingMinutes": 2,
+      "body": "Lo switch SW1 è appena stato acceso e la sua MAC Address Table è vuota. PC-A, collegato a Gi0/1 nella VLAN 10, invia un frame unicast a PC-B, collegato a Gi0/3 nella stessa VLAN. Sulle porte Gi0/2 e Gi0/4 ci sono altri host della VLAN 10; Gi0/5 è nella VLAN 20.",
+      "sources": [
+        {
+          "title": "IEEE 802.1Q — Bridges and Bridged Networks",
+          "publisher": "IEEE",
+          "type": "standard"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "osi-tcpip"
+      ],
+      "objectives": [
+        "ccna-v2:1.3"
+      ],
+      "provenance": "official",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipv4",
+        "rfc1918",
+        "nat"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ranges",
+          "prompt": "Quali sono i tre blocchi privati della RFC 1918 con il relativo prefisso? 172.20.5.1 e 172.33.0.1 sono privati?",
+          "answer": "10.0.0.0/8, 172.16.0.0/12 (172.16.0.0 – 172.31.255.255) e 192.168.0.0/16. 172.20.5.1 è privato perché rientra in 172.16–172.31; 172.33.0.1 è pubblico perché è fuori dal /12.",
+          "keyPoints": [
+            "10.0.0.0/8",
+            "172.16.0.0/12 = da 172.16 a 172.31",
+            "192.168.0.0/16"
+          ],
+          "commonMistakes": [
+            "Considerare privato tutto 172.x.x.x",
+            "Confondere 169.254.0.0/16 (link-local) con un blocco RFC 1918"
+          ]
+        }
+      ],
+      "related": [
+        "dhcp-dora"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "rfc1918-private-addresses",
+      "kind": "lesson",
+      "title": "Indirizzi IPv4 privati (RFC 1918)",
+      "summary": "Tre blocchi di indirizzi riservati all'uso interno: perché esistono, quali sono e cosa implica usarli.",
+      "topicId": "ipv4-addressing",
+      "readingMinutes": 3,
+      "body": "La RFC 1918 riserva tre blocchi di indirizzi IPv4 per le reti private:\n\n| Blocco | Intervallo | Prefisso |\n|---|---|---|\n| 10.0.0.0 | 10.0.0.0 – 10.255.255.255 | /8 |\n| 172.16.0.0 | 172.16.0.0 – 172.31.255.255 | /12 |\n| 192.168.0.0 | 192.168.0.0 – 192.168.255.255 | /16 |\n\n### Quale problema risolvono\nLo spazio IPv4 pubblico è limitato. Gli indirizzi privati possono essere riutilizzati in qualsiasi organizzazione perché **non vengono instradati su Internet**. Per comunicare con l'esterno, un dispositivo di bordo traduce gli indirizzi privati in pubblici tramite **NAT/PAT**.\n\n### Implicazioni pratiche\n- Due aziende possono usare entrambe 10.0.0.0/8 senza conflitti, finché non devono collegare le reti tra loro: in una fusione aziendale o con una VPN site-to-site, gli intervalli sovrapposti diventano un problema concreto.\n- Il blocco 172.16.0.0/12 arriva fino a **172.31**.255.255: un indirizzo come 172.32.1.1 è pubblico. È un errore frequente.\n- Un host con indirizzo 169.254.x.x non ha un indirizzo RFC 1918: è un indirizzo link-local assegnato automaticamente quando il client non ha ottenuto risposta dal server DHCP.",
+      "sources": [
+        {
+          "title": "RFC 1918 — Address Allocation for Private Internets",
+          "url": "https://www.rfc-editor.org/rfc/rfc1918",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing",
+        "mac-addressing"
+      ],
+      "objectives": [],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "arp",
+        "ipv4",
+        "broadcast"
+      ],
+      "diagrams": [
+        {
+          "id": "arp-exchange",
+          "caption": "ARP Request in broadcast e ARP Reply in unicast."
+        }
+      ],
+      "recall": [
+        {
+          "key": "gateway",
+          "prompt": "PC1 (192.168.1.10/24) deve raggiungere 8.8.8.8. Quale indirizzo IP risolve con ARP e perché?",
+          "answer": "Risolve l'IP del Default Gateway, per esempio 192.168.1.1. 8.8.8.8 non appartiene alla subnet 192.168.1.0/24, quindi il pacchetto deve essere consegnato al router. Il frame avrà come MAC di destinazione quello del gateway, mentre il pacchetto IP avrà come destinazione 8.8.8.8.",
+          "keyPoints": [
+            "Confronto con la propria subnet",
+            "Destinazione remota ⇒ ARP per il Default Gateway",
+            "MAC del gateway, IP del destinatario finale"
+          ],
+          "commonMistakes": [
+            "Pensare che PC1 invii un'ARP Request per 8.8.8.8",
+            "Pensare che ARP attraversi il router"
+          ]
+        },
+        {
+          "key": "bcast-ucast",
+          "prompt": "Perché l'ARP Request è broadcast mentre l'ARP Reply è unicast?",
+          "answer": "Chi invia la Request non conosce ancora il MAC del destinatario, quindi deve chiedere a tutti gli host della subnet tramite broadcast. Chi risponde conosce già il MAC del richiedente, contenuto nella Request, e può rispondere direttamente in unicast senza disturbare gli altri host.",
+          "keyPoints": [
+            "Request: MAC di destinazione sconosciuto ⇒ broadcast",
+            "Reply: MAC del richiedente noto ⇒ unicast"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "osi-encapsulation",
+        "icmp-ping-traceroute"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "arp-resolution",
+      "kind": "lesson",
+      "title": "ARP: dal next hop al MAC address",
+      "summary": "Prima di inviare un pacchetto IPv4 su Ethernet, l'host deve conoscere il MAC address del destinatario locale o del Default Gateway. ARP lo scopre con una richiesta broadcast e una risposta unicast.",
+      "topicId": "arp",
+      "readingMinutes": 4,
+      "body": "Per costruire un frame Ethernet un host deve conoscere il **MAC address di destinazione**. Conosce però solo l'indirizzo IP. **ARP** (Address Resolution Protocol) risolve un indirizzo IPv4 nel corrispondente MAC address **all'interno della stessa subnet**.\n\n### Quale IP viene risolto\nL'host confronta l'IP di destinazione con la propria subnet:\n- destinazione **nella stessa subnet** → risolve l'IP del destinatario;\n- destinazione **in un'altra subnet** → risolve l'IP del **Default Gateway**.\n\n### Lo scambio\n1. **ARP Request** in broadcast (destinazione FF:FF:FF:FF:FF:FF): \"Chi ha 192.168.1.1? Lo dica a 192.168.1.10\". Tutti gli host della VLAN la ricevono.\n2. Solo l'host che possiede quell'IP risponde con una **ARP Reply** in **unicast** al richiedente.\n3. Il richiedente salva l'associazione nella **ARP cache** e la riusa per un certo tempo.\n\nChi riceve la Request può anche registrare il MAC del mittente: la comunicazione di ritorno, molto probabile, non richiederà un'altra risoluzione.\n\n```\nPC> arp -a\n  Internet Address      Physical Address      Type\n  192.168.1.1           00-1a-2b-3c-4d-5e     dynamic\n```\n\n### Errori comuni e sicurezza\n- Un Default Gateway configurato in un'altra subnet impedisce la risoluzione: ARP non attraversa i router.\n- ARP non prevede autenticazione: chiunque può inviare risposte false (*ARP spoofing*). La contromisura sugli switch Cisco è **Dynamic ARP Inspection**, che si appoggia a DHCP snooping.",
+      "sources": [
+        {
+          "title": "RFC 826 — An Ethernet Address Resolution Protocol",
+          "url": "https://www.rfc-editor.org/rfc/rfc826",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing"
+      ],
+      "objectives": [
+        "ccna-v2:2.4"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "icmp",
+        "ping",
+        "traceroute",
+        "ttl"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ttl",
+          "prompt": "Come fa traceroute a scoprire l'indirizzo di ciascun router lungo il percorso?",
+          "answer": "Invia sonde con TTL crescente: 1, poi 2, poi 3 e così via. Ogni router decrementa il TTL; il router che lo porta a zero scarta il pacchetto e risponde con un ICMP Time Exceeded, rivelando il proprio indirizzo. Si procede finché la destinazione risponde, con un Echo Reply o con un Port Unreachable a seconda dell'implementazione.",
+          "keyPoints": [
+            "TTL decrementato a ogni hop",
+            "TTL = 0 ⇒ scarto e Time Exceeded (type 11)",
+            "Sonde con TTL crescente",
+            "Fine: risposta della destinazione"
+          ],
+          "commonMistakes": [
+            "Pensare che i router \"annuncino\" il percorso",
+            "Interpretare * * * sempre come guasto"
+          ]
+        },
+        {
+          "key": "ping-codes",
+          "prompt": "In un ping da Cisco IOS ottieni \".!!!!\". Cosa significano i simboli e qual è la causa più probabile del primo punto?",
+          "answer": "\"!\" indica un Echo Reply ricevuto, \".\" un timeout. Il primo pacchetto è andato perso più probabilmente perché il router doveva ancora risolvere con ARP il MAC del next hop: il pacchetto in attesa viene scartato e i successivi trovano la voce ARP già pronta.",
+          "keyPoints": [
+            "! = reply",
+            "\".\" = timeout",
+            "Primo timeout tipico dovuto ad ARP"
+          ],
+          "commonMistakes": [
+            "Concludere che il collegamento perde il 20% dei pacchetti"
+          ]
+        }
+      ],
+      "related": [
+        "arp-resolution",
+        "routing-longest-prefix"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "icmp-ping-traceroute",
+      "kind": "lesson",
+      "title": "Ping e traceroute: cosa succede davvero",
+      "summary": "Ping usa ICMP Echo Request ed Echo Reply. Traceroute sfrutta il TTL e i messaggi Time Exceeded per scoprire i router lungo il percorso.",
+      "topicId": "icmp",
+      "readingMinutes": 5,
+      "body": "**ICMP** è il protocollo con cui i dispositivi IP segnalano errori e informazioni di controllo. Viaggia direttamente dentro IP (protocol number 1), senza porte.\n\n### Ping\n`ping` invia un **Echo Request** (type 8) e attende un **Echo Reply** (type 0). Una risposta dimostra che il percorso funziona **in entrambe le direzioni**: un ping fallito può dipendere anche dalla rotta di ritorno.\n\nSu Cisco IOS l'output è compatto:\n\n```\nR1# ping 10.0.0.2\nType escape sequence to abort.\nSending 5, 100-byte ICMP Echos to 10.0.0.2, timeout is 2 seconds:\n.!!!!\nSuccess rate is 80 percent (4/5)\n```\n\n`!` = risposta ricevuta, `.` = timeout, `U` = Destination Unreachable ricevuto. Il primo `.` è tipico: il router stava ancora risolvendo il next hop con ARP.\n\n### Traceroute\nOgni router decrementa il **TTL** dell'header IP; quando arriva a zero scarta il pacchetto e può inviare un **Time Exceeded** (type 11) al mittente. Traceroute invia sonde con TTL = 1, 2, 3… e ogni Time Exceeded rivela un hop. Windows (`tracert`) usa ICMP Echo, mentre Cisco IOS e Linux usano per impostazione predefinita datagram UDP: la destinazione finale risponde con un Destination Unreachable (port unreachable).\n\n### Interpretazione in azienda\nUn hop con `* * *` non significa per forza un guasto: molti dispositivi limitano o filtrano i messaggi ICMP. Conta se i salti successivi rispondono e se la destinazione è raggiungibile.",
+      "sources": [
+        {
+          "title": "RFC 792 — Internet Control Message Protocol",
+          "url": "https://www.rfc-editor.org/rfc/rfc792",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 791 — Internet Protocol",
+          "url": "https://www.rfc-editor.org/rfc/rfc791",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Cisco IOS Configuration Fundamentals Command Reference",
+          "publisher": "Cisco",
+          "type": "vendor_docs"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "osi-tcpip"
+      ],
+      "objectives": [],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "tcp",
+        "handshake"
+      ],
+      "diagrams": [
+        {
+          "id": "tcp-handshake",
+          "caption": "Apertura di una connessione TCP."
+        }
+      ],
+      "recall": [
+        {
+          "key": "why-three",
+          "prompt": "Perché il Three-Way Handshake richiede tre messaggi e non due?",
+          "answer": "Entrambi i lati devono comunicare il proprio Initial Sequence Number e ricevere conferma. Il SYN porta l'ISN del client; il SYN-ACK conferma l'ISN del client e porta quello del server; l'ACK finale conferma l'ISN del server. Senza il terzo messaggio il server non avrebbe conferma che il client ha ricevuto il suo numero di sequenza.",
+          "keyPoints": [
+            "Due ISN da sincronizzare",
+            "Ogni ISN deve essere confermato",
+            "Il SYN-ACK combina conferma e nuovo ISN"
+          ],
+          "commonMistakes": [
+            "Pensare che l'handshake serva a scambiare dati applicativi"
+          ]
+        },
+        {
+          "key": "syn-rst",
+          "prompt": "In una cattura vedi un SYN verso la porta 443 seguito immediatamente da un RST del server. Cosa ne deduci?",
+          "answer": "L'host di destinazione è raggiungibile e ha risposto, ma nessun servizio è in ascolto sulla porta 443: il sistema operativo rifiuta la connessione con un RST. Se invece il SYN restasse senza risposta, la causa più probabile sarebbe un filtro lungo il percorso o un host irraggiungibile.",
+          "keyPoints": [
+            "RST = host raggiungibile, porta chiusa",
+            "Nessuna risposta = filtro o host irraggiungibile"
+          ],
+          "commonMistakes": [
+            "Attribuire l'RST a un problema di routing"
+          ]
+        }
+      ],
+      "related": [
+        "tcp-vs-udp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "tcp-three-way-handshake",
+      "kind": "lesson",
+      "title": "TCP Three-Way Handshake",
+      "summary": "SYN, SYN-ACK, ACK: come due host sincronizzano i numeri di sequenza prima di scambiare dati in modo affidabile.",
+      "topicId": "tcp-udp",
+      "readingMinutes": 4,
+      "body": "TCP è **orientato alla connessione**: prima di trasmettere dati, client e server stabiliscono una connessione con il **Three-Way Handshake**.\n\n1. **SYN** — il client invia un segment con il flag SYN e il proprio **Initial Sequence Number** (ISN).\n2. **SYN-ACK** — il server risponde con SYN e ACK: conferma l'ISN del client (ACK = ISN client + 1) e comunica il proprio ISN.\n3. **ACK** — il client conferma l'ISN del server. La connessione è stabilita.\n\n### Perché tre messaggi\nCiascun lato deve comunicare il proprio numero di sequenza iniziale e ricevere conferma che l'altro lo ha ricevuto. Con due soli messaggi il server non saprebbe se il client ha ricevuto il suo ISN. Gli ISN vengono scelti per ogni connessione in modo non prevedibile: rende più difficile iniettare segment falsi in una connessione esistente.\n\n### Chiusura\nLa connessione viene chiusa con lo scambio di segment **FIN** e ACK in ciascuna direzione, oppure interrotta bruscamente con un **RST**.\n\n### In una cattura Wireshark\nUn SYN senza risposta indica di solito un filtro (firewall o ACL) o un host irraggiungibile. Un SYN seguito subito da RST indica invece che l'host è raggiungibile ma nessun servizio è in ascolto su quella porta.",
+      "sources": [
+        {
+          "title": "RFC 9293 — Transmission Control Protocol (TCP)",
+          "url": "https://www.rfc-editor.org/rfc/rfc9293",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "osi-tcpip"
+      ],
+      "objectives": [],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "tcp",
+        "udp",
+        "porte"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "voip",
+          "prompt": "Perché il traffico voce in tempo reale viaggia normalmente su UDP e non su TCP?",
+          "answer": "Nella voce in tempo reale conta la latenza: un pacchetto ritrasmesso arriverebbe troppo tardi per essere riprodotto. TCP introdurrebbe ritrasmissioni e attese per l'ordinamento che peggiorano la conversazione. UDP consegna subito ciò che arriva; l'applicazione tollera piccole perdite.",
+          "keyPoints": [
+            "Latenza più importante dell'affidabilità",
+            "Ritrasmissione inutile oltre una certa soglia di tempo",
+            "UDP ha overhead minimo"
+          ],
+          "commonMistakes": [
+            "Dire che UDP è usato perché \"più veloce\" senza spiegare il ruolo delle ritrasmissioni"
+          ]
+        }
+      ],
+      "related": [
+        "tcp-three-way-handshake",
+        "dns-record-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "tcp-vs-udp",
+      "kind": "comparison",
+      "title": "TCP o UDP: quale scegliere e perché",
+      "summary": "TCP offre affidabilità e ordinamento al costo di overhead e latenza. UDP è minimale e lascia queste scelte all'applicazione.",
+      "topicId": "tcp-udp",
+      "readingMinutes": 3,
+      "body": "| | TCP | UDP |\n|---|---|---|\n| Connessione | sì (Three-Way Handshake) | no |\n| Affidabilità | acknowledgment e ritrasmissione | nessuna |\n| Ordinamento | numeri di sequenza | nessuno |\n| Controllo di flusso | window | nessuno |\n| Header | 20 byte minimo | 8 byte |\n| Esempi | HTTPS, SSH, SMTP | DNS (query), DHCP, VoIP, streaming |\n\nL'header UDP contiene solo quattro campi da 16 bit: porta di origine, porta di destinazione, lunghezza e checksum.\n\n### Come ragionare\nTCP non è \"migliore\" di UDP. Per una telefonata VoIP un pacchetto ritrasmesso in ritardo è inutile: meglio perderlo e passare al successivo. Per il trasferimento di un file, invece, ogni byte deve arrivare integro e in ordine.\n\nMolti protocolli moderni costruiscono la propria affidabilità sopra UDP, quando serve controllare in modo diverso latenza e ritrasmissioni.\n\n### Errore comune\nDire che DNS usa \"solo UDP\". Le query usano normalmente UDP sulla porta 53, ma DNS usa anche TCP sulla porta 53, per esempio per i trasferimenti di zona o per le risposte troppo grandi.",
+      "sources": [
+        {
+          "title": "RFC 768 — User Datagram Protocol",
+          "url": "https://www.rfc-editor.org/rfc/rfc768",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 9293 — Transmission Control Protocol (TCP)",
+          "url": "https://www.rfc-editor.org/rfc/rfc9293",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 1035 — Domain Names — Implementation and Specification",
+          "url": "https://www.rfc-editor.org/rfc/rfc1035",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing",
+        "tcp-udp"
+      ],
+      "objectives": [
+        "ccna-v2:1.7"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dhcp",
+        "dora",
+        "relay"
+      ],
+      "diagrams": [
+        {
+          "id": "dhcp-dora",
+          "caption": "I quattro messaggi del processo DORA."
+        }
+      ],
+      "recall": [
+        {
+          "key": "relay",
+          "prompt": "I client della VLAN 20 ricevono un indirizzo 169.254.x.x. Il server DHCP è in un'altra subnet e funziona per le altre VLAN. Qual è la causa più probabile e come la verifichi?",
+          "answer": "La causa più probabile è l'assenza o l'errore del DHCP relay sull'interfaccia (o SVI) gateway della VLAN 20: il Discover in broadcast non attraversa il router. Si verifica con show running-config interface sull'interfaccia della VLAN 20, controllando che esista ip helper-address con l'IP corretto del server. Poi si verifica che sul server esista un pool per quella subnet e che il server sia raggiungibile dal router.",
+          "keyPoints": [
+            "Broadcast non attraversa i router",
+            "ip helper-address sull'interfaccia rivolta ai client",
+            "Pool per la subnet corretta sul server",
+            "169.254.x.x = nessuna risposta DHCP"
+          ],
+          "commonMistakes": [
+            "Configurare ip helper-address sull'interfaccia verso il server invece che verso i client"
+          ]
+        },
+        {
+          "key": "dora-order",
+          "prompt": "Elenca i quattro messaggi DORA, chi li invia e perché il Request è ancora broadcast.",
+          "answer": "Discover (client), Offer (server), Request (client), Ack (server). Il Request è broadcast perché il client non ha ancora un indirizzo confermato e perché, se più server hanno risposto, tutti devono sapere quale offerta è stata accettata: gli altri possono liberare gli indirizzi proposti.",
+          "keyPoints": [
+            "Discover e Request dal client",
+            "Offer e Ack dal server",
+            "Request broadcast: informa tutti i server"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "rfc1918-private-addresses",
+        "tcp-vs-udp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "dhcp-dora",
+      "kind": "lesson",
+      "title": "DHCP: il processo DORA",
+      "summary": "Discover, Offer, Request, Ack: come un client senza indirizzo ottiene la configurazione IP, e perché serve il relay quando il server è in un'altra subnet.",
+      "topicId": "dhcp",
+      "readingMinutes": 5,
+      "body": "**DHCP** assegna automaticamente indirizzo IP, Subnet Mask, Default Gateway, server DNS e altri parametri. Il server usa la porta **UDP 67**, il client la porta **UDP 68**.\n\n### DORA\n1. **Discover** — il client, ancora senza indirizzo, invia un broadcast (origine 0.0.0.0, destinazione 255.255.255.255) per cercare un server.\n2. **Offer** — il server propone un indirizzo dal proprio pool.\n3. **Request** — il client chiede formalmente l'indirizzo offerto. Il messaggio è broadcast anche per informare eventuali altri server che la loro offerta non è stata scelta.\n4. **Ack** — il server conferma: il client può usare l'indirizzo per la durata del **lease**.\n\n### DHCP relay\nI broadcast non attraversano i router. Se il server DHCP si trova in un'altra subnet, l'interfaccia del router rivolta ai client deve essere configurata come **relay agent**: riceve il broadcast e lo inoltra in unicast al server.\n\n```\nR1(config)# interface g0/1\nR1(config-if)# ip helper-address 10.10.10.5\n```\n\nIl relay indica l'interfaccia da cui ha ricevuto la richiesta: così il server sceglie il pool corretto per quella subnet.\n\n### Troubleshooting\nUn client con indirizzo **169.254.x.x** (APIPA su Windows) non ha ricevuto risposta. Controlla nell'ordine: connettività di livello 2 e VLAN, presenza di `ip helper-address` sull'interfaccia giusta, raggiungibilità del server dal relay, pool esaurito o assente per quella subnet.",
+      "sources": [
+        {
+          "title": "RFC 2131 — Dynamic Host Configuration Protocol",
+          "url": "https://www.rfc-editor.org/rfc/rfc2131",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Cisco IOS Configuration Fundamentals Command Reference",
+          "publisher": "Cisco",
+          "type": "vendor_docs"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "tcp-udp"
+      ],
+      "objectives": [
+        "ccna-v2:4.4"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dns",
+        "record"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "mail",
+          "prompt": "Gli utenti ricevono email da tutti tranne che da un nuovo dominio aziendale appena configurato. Quali record DNS controlli e in che ordine?",
+          "answer": "Prima il record MX del dominio: deve esistere e puntare al nome del server di posta. Poi il record A (o AAAA) di quel nome, che deve risolvere all'indirizzo corretto del server. Infine, per la reputazione verso gli altri server, il PTR dell'indirizzo pubblico del server di posta. Un MX che punta direttamente a un IP o a un nome senza A/AAAA non funziona.",
+          "keyPoints": [
+            "MX → nome del mail server",
+            "A/AAAA del mail server",
+            "PTR per il reverse lookup",
+            "MX non deve contenere un IP"
+          ],
+          "commonMistakes": [
+            "Controllare solo il record A del dominio principale"
+          ]
+        }
+      ],
+      "related": [
+        "tcp-vs-udp"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "dns-record-types",
+      "kind": "lesson",
+      "title": "Record DNS: A, AAAA, CNAME, MX, NS, PTR",
+      "summary": "I sei tipi di record citati dal blueprint, cosa contengono e quali sintomi produce un record sbagliato.",
+      "topicId": "dns",
+      "readingMinutes": 5,
+      "body": "Il **DNS** traduce nomi in indirizzi (e viceversa) tramite **record** memorizzati nelle zone.\n\n| Record | Contiene | Esempio |\n|---|---|---|\n| **A** | un indirizzo IPv4 | `www.example.com → 192.0.2.10` |\n| **AAAA** | un indirizzo IPv6 | `www.example.com → 2001:db8::10` |\n| **CNAME** | un alias verso un altro nome | `intranet.example.com → web01.example.com` |\n| **MX** | il server di posta del dominio, con priorità | `example.com → 10 mail.example.com` |\n| **NS** | i server autoritativi della zona | `example.com → ns1.example.com` |\n| **PTR** | il nome associato a un indirizzo (reverse lookup) | `10.2.0.192.in-addr.arpa → www.example.com` |\n\n### Diagnosi per sintomo\n- **Il sito risponde via IP ma non via nome** → record A/AAAA mancante o errato, oppure il client usa un server DNS sbagliato.\n- **Funziona in IPv4 ma è lento o fallisce su alcuni client** → record AAAA presente che punta a un indirizzo IPv6 non raggiungibile: molti client provano prima IPv6.\n- **La posta non arriva** → record MX assente, o MX che punta a un nome senza record A/AAAA. Un MX deve puntare a un nome, non a un indirizzo IP.\n- **I log mostrano solo IP o i controlli antispam falliscono** → manca il PTR per l'indirizzo.\n\n### Strumenti\n```\nnslookup -type=mx example.com\ndig example.com AAAA\n```\nGli esempi usano domini e indirizzi riservati alla documentazione (example.com, 192.0.2.0/24, 2001:db8::/32).",
+      "sources": [
+        {
+          "title": "RFC 1035 — Domain Names — Implementation and Specification",
+          "url": "https://www.rfc-editor.org/rfc/rfc1035",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 3596 — DNS Extensions to Support IP Version 6",
+          "url": "https://www.rfc-editor.org/rfc/rfc3596",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 1,
+      "prerequisites": [
+        "network-devices"
+      ],
+      "objectives": [
+        "ccna-v2:2.4"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ios",
+        "show",
+        "cli"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "updown",
+          "prompt": "Un'interfaccia mostra Status \"up\" e Protocol \"down\". Cosa indica e dove cerchi il problema?",
+          "answer": "Il livello fisico è attivo (c'è segnale/portante), ma il livello Data Link non è operativo. Si controlla la configurazione di livello 2 ai due estremi: incapsulamento, keepalive, mismatch tra le due interfacce sui collegamenti seriali. Con down/down invece il problema è fisico; con administratively down l'interfaccia è in shutdown.",
+          "keyPoints": [
+            "Status = livello 1, Protocol = livello 2",
+            "up/down ⇒ problema di livello 2",
+            "down/down ⇒ problema fisico",
+            "administratively down ⇒ shutdown"
+          ],
+          "commonMistakes": [
+            "Cercare un problema di indirizzamento IP: non cambia lo stato Protocol"
+          ]
+        }
+      ],
+      "related": [
+        "router-vs-switch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "ios-essential-show",
+      "kind": "command",
+      "title": "Comandi show essenziali di Cisco IOS",
+      "summary": "I comandi di verifica da usare per primi su un dispositivo Cisco: cosa mostrano e quando servono.",
+      "topicId": "ios-fundamentals",
+      "readingMinutes": 5,
+      "body": "La verifica parte quasi sempre dagli stessi comandi. In **privileged EXEC** (prompt `#`) si eseguono direttamente; in configurazione si possono anteporre con `do`.\n\n```\nR1# show ip interface brief\nInterface              IP-Address      OK? Method Status                Protocol\nGigabitEthernet0/0     10.0.0.1        YES manual up                    up\nGigabitEthernet0/1     192.168.1.1     YES manual up                    down\nGigabitEthernet0/2     unassigned      YES unset  administratively down down\n```\n\nCome leggere *Status/Protocol*:\n- **up/up** — interfaccia operativa.\n- **up/down** — livello fisico attivo ma problema di livello 2 (per esempio incapsulamento o keepalive).\n- **down/down** — problema fisico: cavo, porta remota spenta.\n- **administratively down/down** — l'interfaccia è disattivata con `shutdown`.\n\n| Comando | Quando usarlo |\n|---|---|\n| `show running-config` | configurazione attiva in RAM |\n| `show startup-config` | configurazione salvata in NVRAM, usata al riavvio |\n| `show interfaces g0/1` | contatori, errori CRC, duplex e speed |\n| `show ip route` | Routing Table |\n| `show mac address-table` | MAC Address Table (switch) |\n| `show vlan brief` | VLAN e porte access associate (switch) |\n| `show version` | versione IOS, uptime, registro di configurazione |\n| `show logging` | messaggi syslog in memoria |\n\n### Errore classico\nLe modifiche entrano subito in **running-config** ma si perdono al riavvio se non vengono salvate con `copy running-config startup-config` (o `write memory`).",
+      "sources": [
+        {
+          "title": "Cisco IOS Configuration Fundamentals Command Reference",
+          "publisher": "Cisco",
+          "type": "vendor_docs"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    },
+    {
+      "revision": 1,
+      "language": "it",
+      "trackId": "ccna",
+      "difficulty": 2,
+      "prerequisites": [
+        "subnetting"
+      ],
+      "objectives": [
+        "ccna-v2:3.1"
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "routing",
+        "routing-table",
+        "longest-prefix-match"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ad-vs-prefix",
+          "prompt": "La Routing Table contiene 10.0.0.0/8 statica [1/0] e 10.1.0.0/16 OSPF [110/20]. Quale rotta usa il router per 10.1.9.9 e perché l'administrative distance non cambia la scelta?",
+          "answer": "Usa 10.1.0.0/16 via OSPF, perché è il match con il prefisso più lungo. L'administrative distance serve solo a scegliere tra rotte verso lo stesso identico prefisso apprese da sorgenti diverse; /8 e /16 sono prefissi diversi e restano entrambe installate.",
+          "keyPoints": [
+            "Longest prefix match prima di tutto",
+            "AD confronta solo rotte verso lo stesso prefisso",
+            "Metric confronta rotte della stessa sorgente"
+          ],
+          "commonMistakes": [
+            "Scegliere la statica perché ha AD più bassa"
+          ]
+        }
+      ],
+      "related": [
+        "icmp-ping-traceroute",
+        "router-vs-switch"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27",
+      "id": "routing-longest-prefix",
+      "kind": "lesson",
+      "title": "Longest prefix match: come il router sceglie la rotta",
+      "summary": "Quando più rotte corrispondono alla destinazione, vince quella con il prefisso più lungo. Administrative distance e metric entrano in gioco solo per rotte con lo stesso prefisso.",
+      "topicId": "routing-fundamentals",
+      "readingMinutes": 5,
+      "body": "Per ogni pacchetto il router cerca nella **Routing Table** tutte le rotte che contengono l'indirizzo di destinazione e sceglie quella con il **prefisso più lungo**, cioè la più specifica.\n\n```\nR1# show ip route\nGateway of last resort is 203.0.113.1 to network 0.0.0.0\n\nS*    0.0.0.0/0 [1/0] via 203.0.113.1\n      10.0.0.0/8 is variably subnetted, 3 subnets, 3 masks\nS        10.0.0.0/8 [1/0] via 10.255.0.2\nO        10.1.0.0/16 [110/20] via 10.255.0.6, 00:12:03, GigabitEthernet0/1\nS        10.1.5.0/24 [1/0] via 10.255.0.10\n```\n\nDestinazioni di esempio:\n- **10.1.5.20** → corrisponde a /0, /8, /16 e /24 → vince **10.1.5.0/24**.\n- **10.1.9.9** → corrisponde a /0, /8, /16 → vince **10.1.0.0/16** (OSPF), anche se la statica /8 ha administrative distance più bassa.\n- **10.200.1.1** → vince **10.0.0.0/8**.\n- **8.8.8.8** → solo la **default route** 0.0.0.0/0.\n\n### Ordine delle decisioni\n1. **Longest prefix match** tra tutte le rotte installate.\n2. Per installare una rotta verso lo **stesso prefisso** proveniente da sorgenti diverse si confronta l'**administrative distance** (statica 1, OSPF 110).\n3. A parità di sorgente si confronta la **metric** del protocollo.\n\nNel formato `[110/20]` il primo numero è l'administrative distance, il secondo la metric.\n\n### Perché conta\nUna rotta statica più specifica dimenticata in configurazione \"vince\" su qualsiasi rotta dinamica meno specifica: è una causa frequente di traffico che segue un percorso inatteso.",
+      "sources": [
+        {
+          "title": "RFC 1812 — Requirements for IP Version 4 Routers",
+          "url": "https://www.rfc-editor.org/rfc/rfc1812",
+          "publisher": "RFC Editor",
+          "type": "rfc"
+        },
+        {
+          "title": "Cisco IOS Configuration Fundamentals Command Reference",
+          "publisher": "Cisco",
+          "type": "vendor_docs"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ]
+    }
+  ]
+}
