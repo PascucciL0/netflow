@@ -16,6 +16,11 @@ Fondamenta complete e prima vertical slice funzionante **in modalità locale**: 
 | Learning Engine: feed deterministico (bucket + interleaving + varietà), FSRS, reducer idempotente | 26 unit test (+ 9 test su contenuti e schema di import) |
 | Migration PostgreSQL con RLS e `record_review` atomica | 7 test su PostgreSQL in memoria (PGlite): isolamento utenti, IDOR, anon, idempotenza, versione |
 | UI: feed, approfondimento, ripasso, libreria (ricerca, salvati, stato argomenti), progressi, impostazioni | Playwright: iPhone 13 chiaro/scuro e desktop 1440px, nessun errore console, nessun overflow orizzontale, persistenza dopo ricarica |
+| Database & Auth: seed SQL generato da `content/` con UUID deterministici, `reset_review_state`, `import_progress` | 14 test su PGlite (seed idempotente, contenuti aggiornati senza perdere ripassi, isolamento utenti, unione/sostituzione) |
+| Store sincronizzato offline-first (outbox, conflitti, migrazione dati locali, cambio utente) | 13 unit test con backend finto |
+| Login email+password, `proxy.ts` con redirect a `/login`, pannello account in Impostazioni | build con variabili Supabase finte: redirect verificati con curl, login e messaggi d'errore verificati con Playwright (iPhone 13 chiaro/scuro); test anti open-redirect |
+| Service worker: offline, cache asset e pagine viste, aggiornamento controllato | Playwright su build di produzione: pagine principali e contenuti visti disponibili offline, `/offline` per il resto, navigazione client offline |
+| Learning Engine: fusi orari/ora legale, aggiornamento contenuti, concorrenza, "Perché la vedo?" | 17 test |
 | Build di produzione Next 16 | `npm run build` verde |
 | Dipendenze | `npm audit --omit=dev`: 0 vulnerabilità |
 
@@ -23,14 +28,15 @@ Screenshot: `docs/screenshots/`.
 
 ## Parziale
 
-- **PWA**: manifest e icone presenti; service worker e fallback offline **non implementati**; installabilità non verificata su dispositivo reale.
+- **PWA**: service worker e offline verificati in Chromium; installabilità da verificare su dispositivo reale dopo il deploy.
+- **Supabase**: codice e SQL pronti e testati in locale; **nessun progetto Supabase reale ancora collegato**.
 - **Esportazione**: backup JSON dei dati personali sì; ripristino da backup no.
 - **Sicurezza**: header di base sì; CSP no.
 - **Contenuti**: 14 su un obiettivo di 60–100. Fonti IEEE e Cisco citate ma non consultate (segnate "da verificare" nell'interfaccia). Tutti i contenuti sono `reviewStatus: proposed`.
 
 ## Non ancora implementato
 
-Importazione da interfaccia · adapter Supabase e autenticazione · seed SQL · prompt di generazione contenuti · news (P2) · test end-to-end automatizzati in CI · DEPLOYMENT_GUIDE.
+Importazione da interfaccia · prompt di generazione contenuti · news (P2: richiede un tipo di contenuto "news" nei contratti) · test end-to-end automatizzati in CI · DEPLOYMENT_GUIDE.
 
 ## Configurazioni mancanti (servono a Lorenzo, da chiedere insieme)
 
@@ -41,7 +47,7 @@ Importazione da interfaccia · adapter Supabase e autenticazione · seed SQL · 
 
 1. **Content & Import**: schermata di import, prompt per ChatGPT/Claude, ampliamento libreria con fonti verificate.
 2. **Learning Engine**: test aggiuntivi (fusi orari, aggiornamento contenuti), bucket news opzionale, "perché vedo questa card".
-3. **Database, Auth & PWA**: seed SQL, adapter Supabase, Auth chiusa, service worker.
+3. **Database, Auth & PWA**: completati in locale; resta il collegamento a un progetto Supabase reale e a Vercel (`docs/DEPLOYMENT_GUIDE.md`).
 4. **QA & Review**: Playwright E2E, revisione indipendente, `TEST_REPORT.md`.
 
 ## Decisioni chiave

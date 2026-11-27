@@ -6,6 +6,7 @@ import { ContentCard } from "@/components/content/content-card";
 import { RecallCard } from "@/components/content/recall-card";
 import { useFeed } from "@/components/content/use-learning";
 import { FEED_REASON_LABELS } from "@/engine/feed";
+import { WhyThis } from "@/components/explain/why-this";
 
 export function FeedView() {
   const { feed, refresh } = useFeed();
@@ -41,6 +42,7 @@ export function FeedView() {
               ) : (
                 <ContentCard item={e.item} label={FEED_REASON_LABELS[e.reason]} />
               )}
+              <WhyThis entry={e} />
             </li>
           ))}
         </ol>
