@@ -1,6 +1,6 @@
 # Schema del database (Supabase / PostgreSQL)
 
-Migration: `supabase/migrations/20261127000001_init.sql`. Testata in locale con PGlite (`tests/db-rls.test.ts`). **Non ancora applicata a un progetto Supabase reale.**
+Migration: `supabase/migrations/20261127000001_init.sql` (schema, RLS, `record_review`) e `20261127000002_sync.sql` (`reset_review_state`, `import_progress`). Seed: `supabase/seed.sql`, generato da `content/`. Testate in locale con PGlite (`tests/db-rls.test.ts`, `tests/db-sync.test.ts`). **Non ancora applicate a un progetto Supabase reale.**
 
 ## Tabelle
 
@@ -41,9 +41,29 @@ Migration: `supabase/migrations/20261127000001_init.sql`. Testata in locale con 
 
 Funzione `security definer` con `search_path` vuoto. In un'unica transazione: verifica autenticazione e visibilità della domanda, rifiuta date future, restituisce `duplicate_event` se l'id esiste, `stale_version` se la versione non coincide, altrimenti inserisce l'evento e aggiorna lo stato (`version + 1`).
 
-## Da fare (flusso Database & Auth)
+## `reset_review_state(recall, versione attesa, due, revisione)`
 
-- Seed SQL del catalogo e dei contenuti di sistema generato da `content/` (script, non a mano).
-- Adapter Supabase di `ProgressStore` e mapping `cardId` (`slug#key`) ⇄ `recall_prompts.id`.
-- Import lato server in transazione (funzione SQL o route handler con validazione zod).
-- Export completo dei dati personali dal database.
+Riporta la carta allo stato "nuova" (valori di `createEmptyCard` di ts-fsrs) e incrementa `version`, così client e server restano allineati sul contatore usato da `record_review`. Restituisce `ok`, `stale_version` o `not_found`.
+
+## `import_progress(payload jsonb, replace boolean)`
+
+Importazione in blocco dei progressi dell'utente autenticato, in un'unica transazione:
+- `replace = false` (unione): le righe già presenti sul server vincono. Usata per portare nell'account i progressi della modalità locale al primo accesso.
+- `replace = true` (sostituzione): cancella tutti i progressi dell'utente (storico compreso) e inserisce il payload. Con payload vuoto è la "Cancella progressi" delle Impostazioni.
+- Scarta e conta (`skipped`) le righe su argomenti inesistenti, contenuti non visibili all'utente, eventi con data futura. Limiti di dimensione (es. 100.000 eventi).
+
+## Seed dei contenuti di sistema
+
+`npm run db:seed` rigenera `supabase/seed.sql` da `content/` (stessa validazione zod dell'app). Gli id sono **UUID v5 deterministici** (`content:<slug>`, `recall:<slug>#<key>`): riapplicare il seed dopo aver aggiunto o modificato contenuti non cambia gli id, quindi i ripassi restano collegati. Il seed è idempotente (upsert). Una domanda di recall rimossa dal repository viene cancellata insieme ai relativi ripassi: **le chiavi di recall non vanno mai rinominate**. Un test verifica che il file committato sia aggiornato rispetto a `content/`.
+
+## Sincronizzazione (client)
+
+- `src/data/sync-types.ts`: mappa slug ⇄ uuid caricata all'avvio, conversione righe ⇄ `UserSnapshot`, operazioni di sincronizzazione.
+- `src/data/sync-store.ts`: store offline-first. Ogni mutazione passa dal reducer condiviso, poi diventa un'operazione con lo stato completo dell'entità, accodata in una outbox persistita in `localStorage` e inviata in ordine. Senza rete resta in coda e riparte al ritorno online. Conflitto di versione su un ripasso (stessa carta valutata su un altro dispositivo): vince il server, l'operazione locale viene scartata e mostrata nelle Impostazioni.
+- `src/data/supabase-remote.ts`: unico punto che usa supabase-js (paginazione a blocchi di 1000 righe).
+- Cambio utente sullo stesso dispositivo: la cache dell'utente precedente non viene mai mostrata. Al logout la cache del dispositivo viene cancellata.
+
+## Da fare
+
+- Import di contenuti personali lato server in transazione (flusso Content & Import).
+- Export completo dei dati personali direttamente dal database (oggi l'export JSON usa lo snapshot sincronizzato, che contiene già tutti i progressi).

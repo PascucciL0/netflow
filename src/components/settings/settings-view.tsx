@@ -6,6 +6,8 @@ import { emptySnapshot, type UserPreferences } from "@/domain/progress";
 import { downloadJson, makeBackup } from "@/data/backup";
 import { useDispatch, useHydrated, useSnapshot, useStoreApi } from "@/data/progress-context";
 import { localDayKey } from "@/lib/dates";
+import { dataMode } from "@/lib/env";
+import { AccountPanel } from "@/components/account/account-panel";
 
 const THEMES: { value: UserPreferences["theme"]; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "Sistema", icon: Monitor },
@@ -72,11 +74,15 @@ export function SettingsView() {
         </p>
       </section>
 
+      <AccountPanel />
+
       <section aria-labelledby="s-data">
         <h2 id="s-data" className="meta-strip mb-3">I tuoi dati</h2>
         <div className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
           <p className="text-[14.5px] leading-relaxed text-ink-2">
-            In modalità locale i progressi restano solo in questo browser. Esporta un backup regolarmente: contiene stato degli argomenti, interazioni, ripassi e storico delle valutazioni.
+            {dataMode === "supabase"
+              ? "I progressi sono salvati nel tuo account e sincronizzati tra i dispositivi. Il backup JSON resta utile come copia personale: contiene stato degli argomenti, interazioni, ripassi e storico delle valutazioni."
+              : "In modalità locale i progressi restano solo in questo browser. Esporta un backup regolarmente: contiene stato degli argomenti, interazioni, ripassi e storico delle valutazioni."}
           </p>
           <button
             type="button"
@@ -87,7 +93,7 @@ export function SettingsView() {
           </button>
         </div>
         <div className="mt-3 rounded-[var(--radius-card)] border border-again/30 p-4">
-          <p className="text-[14.5px] text-ink-2">Cancella tutti i progressi locali. L&apos;operazione non si può annullare.</p>
+          <p className="text-[14.5px] text-ink-2">{dataMode === "supabase" ? "Cancella tutti i progressi dal tuo account, su tutti i dispositivi." : "Cancella tutti i progressi locali."} L&apos;operazione non si può annullare.</p>
           {confirmReset ? (
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => { store.replace(emptySnapshot()); setConfirmReset(false); }} className="h-11 flex-1 rounded-[var(--radius-control)] bg-again text-[14.5px] font-medium text-white">
@@ -108,7 +114,7 @@ export function SettingsView() {
       <section aria-labelledby="s-about">
         <h2 id="s-about" className="meta-strip mb-3">Informazioni</h2>
         <p className="text-[14px] leading-relaxed text-ink-2">
-          NetFlow funziona senza servizi AI e senza abbonamenti. Modalità attuale: <span className="font-medium text-ink">locale (demo)</span>. I contenuti segnati come &quot;bozza da rivedere&quot; sono proposte non ancora approvate.
+          NetFlow funziona senza servizi AI e senza abbonamenti. Modalità attuale: <span className="font-medium text-ink">{dataMode === "supabase" ? "account sincronizzato (Supabase)" : "locale (demo)"}</span>. I contenuti segnati come &quot;bozza da rivedere&quot; sono proposte non ancora approvate.
         </p>
       </section>
     </div>
