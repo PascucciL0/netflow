@@ -71,7 +71,11 @@ export function explainFeedEntry(entry: FeedEntry, ctx: { snapshot: UserSnapshot
       break;
     }
     case "explore":
-      details.push("Non ci sono ripassi o argomenti in studio da proporre in questo momento: è un contenuto che non vedi da un po'.");
+      details.push(
+        lastSeen
+          ? "Non ci sono ripassi o argomenti in studio da proporre in questo momento: è un contenuto che non vedi da un po'."
+          : "Non ci sono ripassi o argomenti in studio da proporre in questo momento: è un contenuto che non hai ancora letto.",
+      );
       if (lastSeen) details.push(lastSeen);
       break;
   }

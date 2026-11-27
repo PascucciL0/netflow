@@ -168,6 +168,15 @@ describe("perché vedo questa card", () => {
     expect(explainFeedEntry(f.entries[0], ctx(emptySnapshot())).details[0]).toMatch(/Punto di partenza/);
   });
 
+  it("esplora: distingue un contenuto mai letto da uno letto tempo fa", () => {
+    const never = explainFeedEntry(entry("explore", items[3]), ctx(emptySnapshot()));
+    expect(never.details).toEqual(["Non ci sono ripassi o argomenti in studio da proporre in questo momento: è un contenuto che non hai ancora letto."]);
+    const seen = run(emptySnapshot(), [{ type: "content/seen", contentId: "c1" }, T0]);
+    const old = explainFeedEntry(entry("explore", items[3]), ctx(seen, at(hours(24 * 5))));
+    expect(old.details[0]).toMatch(/non vedi da un po'/);
+    expect(old.details[1]).toBe("Ultima lettura: 5 giorni fa.");
+  });
+
   it("date relative leggibili", () => {
     expect(relativeDays(T0.toISOString(), T0)).toBe("oggi");
     expect(relativeDays(at(-hours(24)).toISOString(), T0)).toBe("ieri");
