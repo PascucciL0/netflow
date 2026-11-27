@@ -13,6 +13,8 @@ type Listener = () => void;
 
 export interface ProgressStore {
   getSnapshot(): UserSnapshot;
+  /** false finché i dati personali non sono stati caricati (cache o server): evita feed calcolati su dati vuoti. */
+  isReady(): boolean;
   subscribe(listener: Listener): () => void;
   dispatch(m: Mutation): ReduceResult;
   replace(next: UserSnapshot): void;
@@ -60,6 +62,7 @@ export function createLocalStore(clock: () => Date = () => new Date()): Progress
 
   return {
     getSnapshot: () => snapshot,
+    isReady: () => true,
     subscribe(l) {
       listeners.add(l);
       return () => listeners.delete(l);

@@ -3,6 +3,7 @@ import "./globals.css";
 import { ProgressProvider } from "@/data/progress-context";
 import { AppShell } from "@/components/shell/app-shell";
 import { ThemeController } from "@/components/shell/theme-controller";
+import { ServiceWorkerRegistration } from "@/components/pwa/sw-register";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ProgressProvider>
           <ThemeController />
           <AppShell>{children}</AppShell>
+          <ServiceWorkerRegistration />
         </ProgressProvider>
       </body>
     </html>
