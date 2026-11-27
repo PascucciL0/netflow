@@ -4,13 +4,15 @@ import { useMemo, useState } from "react";
 import { cardIdOf, type CardId, type ContentItem } from "@/domain/content";
 import { seedItems, topics } from "@/data/catalog";
 import { useHydrated, useSnapshot, useStoreApi } from "@/data/progress-context";
+import { useImportedItems } from "@/data/import-store";
 import { buildFeed, type FeedResult } from "@/engine/feed";
 import { isDue } from "@/engine/scheduler";
 import { localDayKey } from "@/lib/dates";
 
-/** Tutti i contenuti disponibili (oggi: seed di sistema; poi anche quelli importati). */
+/** Tutti i contenuti disponibili: seed di sistema + contenuti importati dall'utente. */
 export function useAllItems(): ContentItem[] {
-  return seedItems;
+  const imported = useImportedItems();
+  return useMemo(() => (imported.length === 0 ? seedItems : [...seedItems, ...imported]), [imported]);
 }
 
 /**

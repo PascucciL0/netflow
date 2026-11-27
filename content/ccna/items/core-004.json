@@ -1,0 +1,1884 @@
+{
+  "format": "netflow.content-package",
+  "schemaVersion": 1,
+  "package": {
+    "id": "netflow-core-ccna-004",
+    "title": "NetFlow — Libreria CCNA (lotto 4): servizi, sicurezza, gestione, virtualizzazione, wireless",
+    "language": "it",
+    "generator": "NetFlow seed curato",
+    "createdAt": "2026-11-27",
+    "notes": "Contenuti originali. Le fonti con verifiedOn sono state consultate il 2026-11-27; le altre sono riferimenti da verificare."
+  },
+  "items": [
+    {
+      "id": "nat-terminology",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "NAT: inside local, inside global e le altre tre parole da non confondere",
+      "summary": "Il NAT traduce gli indirizzi al confine della rete. Quattro termini descrivono ogni indirizzo dal punto di vista del router: inside o outside, local o global.",
+      "body": "Il **NAT** (Network Address Translation) modifica l'indirizzo IP di origine o di destinazione dei pacchetti che attraversano un router. L'uso più comune: far uscire su Internet gli host con indirizzi privati RFC 1918 usando un indirizzo pubblico.\n\n### I quattro termini\n- **Inside / Outside**: *di chi* è l'indirizzo. Inside = un host della nostra rete; outside = un host esterno.\n- **Local / Global**: *da dove* lo si guarda. Local = come appare dentro la rete; global = come appare all'esterno.\n\n| Termine | Esempio | Significato |\n|---|---|---|\n| **Inside local** | 192.168.1.10 | L'indirizzo reale del PC interno |\n| **Inside global** | 203.0.113.5 | L'indirizzo con cui il PC appare su Internet |\n| **Outside global** | 198.51.100.20 | L'indirizzo reale del server esterno |\n| **Outside local** | 198.51.100.20 | Come il server appare dall'interno; di solito uguale all'outside global |\n\n### Tipi di NAT\n- **NAT statico**: una corrispondenza fissa 1:1 tra inside local e inside global. Serve per rendere raggiungibile da Internet un server interno.\n- **NAT dinamico**: gli indirizzi interni ricevono un indirizzo libero da un **pool** di indirizzi pubblici. 1:1, ma temporaneo; se il pool è esaurito, i nuovi host non escono.\n- **PAT** (NAT *overload*): molti host condividono **un solo** indirizzo pubblico. Il router distingue le connessioni tramite le **porte** di trasporto. La RFC 3022 lo chiama **NAPT**.\n\nIl NAT non è una funzione di sicurezza: nasconde gli indirizzi interni, ma il filtraggio va fatto con ACL o firewall.",
+      "trackId": "ccna",
+      "topicId": "nat",
+      "difficulty": 1,
+      "prerequisites": [
+        "ipv4-addressing",
+        "tcp-udp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.3"
+      ],
+      "sources": [
+        {
+          "title": "RFC 3022 — Traditional IP Network Address Translator (Traditional NAT)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc3022.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "IP Addressing Configuration Guide, Cisco IOS XE 17.x — Configuring NAT for IP Address Conservation",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_iadnat-addr-consv-xe.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "nat",
+        "pat",
+        "terminologia"
+      ],
+      "diagrams": [
+        {
+          "id": "pat-translation"
+        }
+      ],
+      "recall": [
+        {
+          "key": "terms",
+          "prompt": "PC1 (192.168.1.10) naviga su un server (198.51.100.20) attraverso R1, che usa PAT con l'indirizzo 203.0.113.5. Indica inside local, inside global, outside local e outside global.",
+          "answer": "Inside local 192.168.1.10; inside global 203.0.113.5; outside global 198.51.100.20; outside local 198.51.100.20 (il server non viene tradotto, quindi appare allo stesso modo anche dall'interno).",
+          "keyPoints": [
+            "Inside/outside = di chi è l'host",
+            "Local/global = da quale lato lo vedi"
+          ],
+          "commonMistakes": [
+            "Pensare che l'indirizzo del server sia inside global perché è pubblico"
+          ]
+        },
+        {
+          "key": "pat",
+          "prompt": "Come fa un router PAT a distinguere le risposte destinate a due PC interni che usano lo stesso indirizzo pubblico?",
+          "answer": "Tiene una tabella di traduzione che associa indirizzo e porta interni a indirizzo pubblico e porta. Le risposte arrivano tutte all'indirizzo pubblico, ma con porte di destinazione diverse: dalla porta il router ricava l'host interno. Se due host usano la stessa porta di origine, il router ne assegna una diversa.",
+          "keyPoints": [
+            "Traduzione indirizzo + porta",
+            "NAT table",
+            "Porta diversa se in conflitto"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "nat-config",
+        "rfc1918-private-addresses"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "nat-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Configurare NAT statico, dinamico e PAT su IOS XE",
+      "summary": "Si indicano le interfacce inside e outside, poi la regola di traduzione: static per un server, pool per il NAT dinamico, overload per il PAT.",
+      "body": "### 1. Interfacce\n```\nR1(config)# interface gigabitEthernet0/0/1\nR1(config-if)# ip nat inside\nR1(config-if)# interface gigabitEthernet0/0/0\nR1(config-if)# ip nat outside\n```\n\n### 2a. NAT statico (server pubblicato)\n```\nR1(config)# ip nat inside source static 192.168.1.100 203.0.113.10\n```\n\n### 2b. NAT dinamico con pool\n```\nR1(config)# access-list 1 permit 192.168.1.0 0.0.0.255\nR1(config)# ip nat pool PUBBLICI 203.0.113.20 203.0.113.30 netmask 255.255.255.0\nR1(config)# ip nat inside source list 1 pool PUBBLICI\n```\nL'ACL non filtra traffico: **seleziona** gli indirizzi da tradurre.\n\n### 2c. PAT sull'indirizzo dell'interfaccia\n```\nR1(config)# access-list 1 permit 192.168.1.0 0.0.0.255\nR1(config)# ip nat inside source list 1 interface gigabitEthernet0/0/0 overload\n```\nÈ la configurazione tipica di una piccola sede con un solo indirizzo pubblico assegnato dall'ISP. `overload` si può usare anche con un pool.\n\n### Verifica\n```\nR1# show ip nat translations\nPro  Inside global       Inside local        Outside local       Outside global\ntcp  203.0.113.5:51000   192.168.1.10:51000  198.51.100.20:443   198.51.100.20:443\n---  203.0.113.10        192.168.1.100       ---                 ---\nR1# show ip nat statistics\nR1# clear ip nat translation *\n```\nLe traduzioni statiche compaiono sempre; quelle dinamiche solo mentre c'è traffico e scadono dopo un timeout.",
+      "trackId": "ccna",
+      "topicId": "nat",
+      "difficulty": 2,
+      "prerequisites": [
+        "nat"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.3"
+      ],
+      "sources": [
+        {
+          "title": "IP Addressing Configuration Guide, Cisco IOS XE 17.x — Configuring NAT for IP Address Conservation",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_iadnat-addr-consv-xe.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 3022 — Traditional IP Network Address Translator (Traditional NAT)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc3022.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "nat",
+        "pat",
+        "configurazione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "pat",
+          "prompt": "Scrivi la configurazione PAT che traduce la LAN 10.1.1.0/24 sull'indirizzo dell'interfaccia Gi0/0/0 (outside), con Gi0/0/1 inside.",
+          "answer": "`interface g0/0/1` + `ip nat inside`; `interface g0/0/0` + `ip nat outside`; `access-list 1 permit 10.1.1.0 0.0.0.255`; `ip nat inside source list 1 interface g0/0/0 overload`.",
+          "keyPoints": [
+            "inside/outside sulle interfacce",
+            "ACL per selezionare",
+            "overload = PAT"
+          ],
+          "commonMistakes": [
+            "Dimenticare ip nat inside/outside",
+            "Omettere overload e ottenere NAT dinamico 1:1"
+          ]
+        }
+      ],
+      "related": [
+        "nat-terminology",
+        "nat-troubleshooting"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "nat-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: gli utenti non escono su Internet dopo la modifica al NAT",
+      "summary": "La configurazione PAT sembra corretta ma `show ip nat translations` è vuoto. Tre errori tipici: inside e outside invertiti, ACL sbagliata, route mancante.",
+      "body": "### Situazione\n```\nR1# show running-config | include nat\n ip nat outside            ! su Gi0/0/1, verso la LAN\n ip nat inside             ! su Gi0/0/0, verso l'ISP\nip nat inside source list 1 interface GigabitEthernet0/0/0 overload\nR1# show access-lists 1\nStandard IP access list 1\n    10 permit 192.168.10.0, wildcard bits 0.0.0.255\n```\nLa LAN è 192.168.1.0/24. `show ip nat translations` è vuoto.\n\n### Due errori\n1. **Inside e outside invertiti**: la LAN è marcata come outside. Il router traduce solo i pacchetti che entrano da un'interfaccia inside e escono da una outside.\n2. **ACL che non corrisponde**: permette 192.168.10.0/24, mentre gli host sono in 192.168.1.0/24. Nessun pacchetto viene selezionato.\n\n### Correzione\n```\nR1(config)# interface gigabitEthernet0/0/1\nR1(config-if)# no ip nat outside\nR1(config-if)# ip nat inside\nR1(config-if)# interface gigabitEthernet0/0/0\nR1(config-if)# no ip nat inside\nR1(config-if)# ip nat outside\nR1(config)# no access-list 1\nR1(config)# access-list 1 permit 192.168.1.0 0.0.0.255\n```\n\n### Altri controlli\n- **Default route** verso l'ISP presente: senza, il pacchetto non viene instradato e la traduzione non avviene.\n- **Pool esaurito** nel NAT dinamico senza overload: `show ip nat statistics` mostra i *misses*.\n- `debug ip nat` mostra in tempo reale le traduzioni.",
+      "trackId": "ccna",
+      "topicId": "nat",
+      "difficulty": 2,
+      "prerequisites": [
+        "nat"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.3"
+      ],
+      "sources": [
+        {
+          "title": "IP Addressing Configuration Guide, Cisco IOS XE 17.x — Configuring NAT for IP Address Conservation",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_iadnat-addr-consv-xe.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "nat",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "empty",
+          "prompt": "La tabella NAT resta vuota anche se gli utenti generano traffico verso Internet. Quali tre cose verifichi per prime?",
+          "answer": "Che `ip nat inside` sia sull'interfaccia verso la LAN e `ip nat outside` su quella verso l'ISP; che l'ACL usata nella regola NAT corrisponda alla subnet reale degli host; che esista una route (di solito la default) verso Internet.",
+          "keyPoints": [
+            "inside/outside corretti",
+            "ACL corrispondente",
+            "Route verso l'esterno"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "nat-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dhcp-relay-ios",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "DHCP su IOS: server, esclusioni e relay con ip helper-address",
+      "summary": "Un router può fare da server DHCP per più VLAN. Se il server è in un'altra subnet, il router della VLAN inoltra le richieste in unicast con ip helper-address.",
+      "body": "### Router come server DHCP\n```\nR1(config)# ip dhcp excluded-address 192.168.10.1 192.168.10.10\nR1(config)# ip dhcp pool VLAN10\nR1(dhcp-config)# network 192.168.10.0 255.255.255.0\nR1(dhcp-config)# default-router 192.168.10.1\nR1(dhcp-config)# dns-server 192.168.100.53\nR1(dhcp-config)# domain-name azienda.local\nR1(dhcp-config)# lease 1\n```\nLe **esclusioni** si configurano fuori dal pool e proteggono gli indirizzi statici (gateway, stampanti, server).\n\n### DHCP relay\nIl **DHCP Discover** è un broadcast: non attraversa il router. Se il server DHCP si trova in un'altra subnet, l'interfaccia del router che riceve il broadcast lo inoltra **in unicast** al server:\n```\nR1(config)# interface gigabitEthernet0/0.10\nR1(config-subif)# ip helper-address 192.168.100.20\n```\nIl relay inserisce nel campo **giaddr** l'indirizzo dell'interfaccia che ha ricevuto la richiesta: il server usa quel valore per scegliere lo scope corretto.\n\n### Router come client DHCP\n```\nR1(config)# interface gigabitEthernet0/0/0\nR1(config-if)# ip address dhcp\n```\nTipico verso l'ISP.\n\n### Verifica\n```\nR1# show ip dhcp binding\nR1# show ip dhcp pool\nR1# show ip dhcp conflict\n```",
+      "trackId": "ccna",
+      "topicId": "dhcp",
+      "difficulty": 2,
+      "prerequisites": [
+        "dhcp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.7"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2131 — Dynamic Host Configuration Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2131",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dhcp",
+        "relay",
+        "helper-address"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "relay",
+          "prompt": "Il server DHCP è in 10.0.100.0/24, i PC della VLAN 20 in 192.168.20.0/24. Dove configuri `ip helper-address` e come fa il server a sapere da quale pool assegnare l'indirizzo?",
+          "answer": "Sull'interfaccia (o sotto-interfaccia/SVI) che fa da gateway per la VLAN 20, cioè dove arriva il broadcast del client. Il relay inoltra la richiesta in unicast e scrive nel campo giaddr l'indirizzo di quell'interfaccia (192.168.20.1): il server sceglie il pool che contiene quell'indirizzo.",
+          "keyPoints": [
+            "Sull'interfaccia della VLAN dei client",
+            "Broadcast → unicast",
+            "giaddr seleziona lo scope"
+          ],
+          "commonMistakes": [
+            "Configurarlo sull'interfaccia verso il server"
+          ]
+        }
+      ],
+      "related": [
+        "dhcp-dora",
+        "dhcp-troubleshooting",
+        "dhcp-snooping"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dhcp-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: i client della nuova VLAN ricevono un indirizzo 169.254.x.x",
+      "summary": "Un indirizzo APIPA significa che il client non ha ricevuto risposta DHCP. Si segue il percorso del Discover dal client al server.",
+      "body": "### Situazione\nÈ stata creata la VLAN 30 con SVI 192.168.30.1 su SW-CORE. I PC della VLAN 30 mostrano 169.254.12.7/16. Il server DHCP centrale è 10.0.100.20 e serve correttamente le altre VLAN.\n\n### Percorso da verificare\n1. **Livello 2**: la porta del PC è nella VLAN 30? La VLAN 30 è consentita sui trunk fino a SW-CORE?\n   `show interfaces gi1/0/7 switchport`, `show interfaces trunk`\n2. **SVI**: `interface vlan 30` è up/up?\n3. **Relay**: sulla SVI c'è `ip helper-address 10.0.100.20`? Spesso è la riga dimenticata quando si crea una VLAN.\n4. **Server**: esiste uno scope per 192.168.30.0/24? Il server ha una route di ritorno verso 192.168.30.1?\n5. **DHCP snooping**: se attivo, la porta verso il server o l'uplink è **trusted**? Su una porta untrusted le risposte del server vengono scartate.\n6. **Pool esaurito**: `show ip dhcp pool` (se il server è un router IOS).\n\n### In questo caso\n```\nSW-CORE# show running-config interface vlan 30\ninterface Vlan30\n ip address 192.168.30.1 255.255.255.0\n```\nManca il relay:\n```\nSW-CORE(config)# interface vlan 30\nSW-CORE(config-if)# ip helper-address 10.0.100.20\n```\nPoi sul client: `ipconfig /release` e `ipconfig /renew`.",
+      "trackId": "ccna",
+      "topicId": "dhcp",
+      "difficulty": 2,
+      "prerequisites": [
+        "dhcp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.7",
+        "ccna-v2:1.6"
+      ],
+      "sources": [
+        {
+          "title": "RFC 2131 — Dynamic Host Configuration Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2131",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dhcp",
+        "troubleshooting",
+        "apipa"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "apipa",
+          "prompt": "Cosa indica un indirizzo 169.254.x.x su un client Windows e quali sono i punti da verificare nell'ordine?",
+          "answer": "Che il client non ha ricevuto alcuna risposta DHCP e si è assegnato un indirizzo link-local. Si verifica: VLAN della porta e trunk; SVI o gateway up; `ip helper-address` sull'interfaccia della VLAN se il server è remoto; scope presente sul server e route di ritorno; porte trusted se è attivo DHCP snooping; pool non esaurito.",
+          "keyPoints": [
+            "169.254 = nessuna risposta DHCP",
+            "L2 → gateway → relay → server → snooping"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dhcp-relay-ios",
+        "dhcp-dora"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dns-troubleshooting",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Diagnosticare i record DNS: A, AAAA, CNAME, MX, NS, PTR",
+      "summary": "Il sito risponde per IP ma non per nome, la posta non arriva, il traceroute mostra nomi sbagliati: ogni sintomo punta a un tipo di record diverso.",
+      "body": "| Sintomo | Record da controllare | Esempio di verifica |\n|---|---|---|\n| `www.esempio.it` non si apre, l'IP sì | **A** (IPv4) o **AAAA** (IPv6) | `nslookup www.esempio.it` |\n| Funziona in IPv4 ma i client IPv6 non arrivano | **AAAA** errato o che punta a un server senza IPv6 attivo | `nslookup -type=AAAA www.esempio.it` |\n| Un alias porta al server sbagliato | **CNAME** che punta a un nome non aggiornato | `nslookup -type=CNAME shop.esempio.it` |\n| La posta in arrivo non viene consegnata | **MX** (con la sua priorità) e il record A del server indicato | `nslookup -type=MX esempio.it` |\n| Le modifiche non si propagano o il dominio non risolve | **NS**: i server autoritativi delegati | `nslookup -type=NS esempio.it` |\n| Log e traceroute mostrano nomi errati per gli IP | **PTR** nella zona inversa | `nslookup 203.0.113.10` |\n\n### Da ricordare\n- Un CNAME punta a un **nome**, mai a un indirizzo; l'MX punta a un nome che deve avere un record A/AAAA.\n- I resolver conservano le risposte per il **TTL** del record: dopo una modifica, alcuni client vedono ancora il valore vecchio. `ipconfig /flushdns` svuota la cache del client Windows.\n- Prima di dare la colpa al DNS si verifica che l'host abbia un **server DNS** configurato e raggiungibile (`ipconfig /all`).\n\n### Su IOS\n```\nR1(config)# ip name-server 192.168.100.53\nR1(config)# ip domain lookup\nR1(config)# ip host SW1 192.168.99.11      ! voce statica locale\n```\nIl router può anche fare da server DNS semplice con `ip dns server`.",
+      "trackId": "ccna",
+      "topicId": "dns",
+      "difficulty": 2,
+      "prerequisites": [
+        "dns"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 1035 — Domain Names — Implementation and Specification",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc1035",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dns",
+        "troubleshooting",
+        "record"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "mx",
+          "prompt": "La posta per esempio.it non arriva. Il record MX punta a mail.esempio.it. Cosa verifichi?",
+          "answer": "Che il record MX esista e abbia la priorità prevista, che mail.esempio.it abbia un record A (o AAAA) con l'indirizzo corretto del server di posta e che quel server sia raggiungibile sulle porte di posta. Un MX deve puntare a un nome, non a un indirizzo IP né a un CNAME.",
+          "keyPoints": [
+            "MX → nome",
+            "Il nome deve avere A/AAAA"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "ttl",
+          "prompt": "Hai cambiato il record A di www.esempio.it un'ora fa. Alcuni utenti vedono il nuovo server, altri il vecchio. Perché?",
+          "answer": "I resolver e i client conservano in cache la risposta precedente per la durata del TTL del record. Finché il TTL non scade, continuano a usare il vecchio indirizzo. Sul client si può svuotare la cache con `ipconfig /flushdns`.",
+          "keyPoints": [
+            "Cache per la durata del TTL"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dns-record-types"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "acl-standard-extended",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "ACL standard ed estese: cosa confrontano e dove applicarle",
+      "summary": "Le ACL standard guardano solo l'indirizzo di origine; le estese anche destinazione, protocollo e porte. Le regole si leggono dall'alto e finiscono con un deny implicito.",
+      "body": "Una **Access Control List** è un elenco ordinato di regole (ACE) *permit* o *deny*. Applicata a un'interfaccia in una direzione (`in` o `out`), filtra i pacchetti.\n\n### Come viene valutata\n1. Le regole si leggono **dall'alto verso il basso**.\n2. Alla **prima corrispondenza** il router applica l'azione e smette di leggere.\n3. Se nessuna regola corrisponde, il pacchetto viene scartato: alla fine di ogni ACL c'è un **deny implicito**.\n\nUn'ACL con solo regole deny blocca quindi **tutto**. Serve almeno un permit.\n\n### Standard ed estese\n| | Standard | Estesa |\n|---|---|---|\n| Confronta | solo IP di **origine** | origine, **destinazione**, protocollo, porte |\n| Numeri | 1–99, 1300–1999 | 100–199, 2000–2699 |\n| Dove applicarla | **vicino alla destinazione** | **vicino all'origine** |\n\n### Perché il posizionamento\n- Una **standard** non conosce la destinazione: messa vicino all'origine bloccherebbe quell'host verso *tutte* le reti.\n- Un'**estesa** descrive con precisione il traffico: vicino all'origine il pacchetto indesiderato viene scartato subito, senza consumare banda nel resto della rete.\n\n### Una ACL per interfaccia, direzione e protocollo\nSu ogni interfaccia si può applicare al massimo un'ACL IPv4 in ingresso e una in uscita. Una nuova `ip access-group` sostituisce quella precedente.",
+      "trackId": "ccna",
+      "topicId": "acl",
+      "difficulty": 1,
+      "prerequisites": [
+        "subnetting",
+        "tcp-udp"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.6"
+      ],
+      "sources": [
+        {
+          "title": "Configure Commonly Used IP ACLs",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "acl",
+        "sicurezza",
+        "filtraggio"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "implicit",
+          "prompt": "Un'ACL applicata in ingresso contiene solo `deny 192.168.1.50`. Che effetto ha sul resto del traffico?",
+          "answer": "Blocca tutto. 192.168.1.50 corrisponde alla regola deny; tutti gli altri pacchetti non corrispondono a nessuna regola e vengono scartati dal deny implicito finale. Serve aggiungere `permit any` dopo la regola deny.",
+          "keyPoints": [
+            "Prima corrispondenza",
+            "Deny implicito finale",
+            "Serve almeno un permit"
+          ],
+          "commonMistakes": [
+            "Pensare che il traffico non citato passi"
+          ]
+        },
+        {
+          "key": "place",
+          "prompt": "Perché un'ACL standard si applica vicino alla destinazione e un'estesa vicino all'origine?",
+          "answer": "La standard confronta solo l'origine: vicino all'origine bloccherebbe quell'host verso ogni destinazione. Vicino alla destinazione blocca solo il traffico diretto lì. L'estesa specifica anche destinazione e protocollo, quindi può stare vicino all'origine ed evitare che il traffico vietato attraversi la rete.",
+          "keyPoints": [
+            "Standard: solo origine → vicino alla destinazione",
+            "Estesa: precisa → vicino all'origine"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "acl-wildcard",
+        "acl-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "acl-wildcard",
+      "revision": 1,
+      "kind": "recall",
+      "language": "it",
+      "title": "Wildcard mask: esercizi di calcolo",
+      "summary": "Nella wildcard mask il bit 0 significa \"deve corrispondere\", il bit 1 \"ignora\". Per una subnet si calcola come 255.255.255.255 meno la Subnet Mask.",
+      "body": "- **0** = il bit deve coincidere; **1** = il bit può essere qualsiasi.\n- Per una subnet: wildcard = 255.255.255.255 − Subnet Mask. Per /24 → 0.0.0.255; per /26 → 0.0.0.63.\n- Abbreviazioni: `host 10.1.1.1` = 10.1.1.1 0.0.0.0; `any` = 0.0.0.0 255.255.255.255.",
+      "trackId": "ccna",
+      "topicId": "acl",
+      "difficulty": 2,
+      "prerequisites": [
+        "acl"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:4.6"
+      ],
+      "sources": [
+        {
+          "title": "Configure Commonly Used IP ACLs",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "acl",
+        "wildcard",
+        "esercizi"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "subnet",
+          "prompt": "Quale wildcard mask seleziona la subnet 172.16.32.0/20?",
+          "answer": "0.0.15.255. La mask /20 è 255.255.240.0; 255.255.255.255 − 255.255.240.0 = 0.0.15.255. Il comando è ad esempio `permit 172.16.32.0 0.0.15.255`.",
+          "keyPoints": [
+            "255.255.255.255 − mask",
+            "/20 → 0.0.15.255"
+          ],
+          "commonMistakes": [
+            "Usare la Subnet Mask al posto della wildcard"
+          ]
+        },
+        {
+          "key": "range",
+          "prompt": "Quali indirizzi seleziona `192.168.10.64 0.0.0.31`?",
+          "answer": "Da 192.168.10.64 a 192.168.10.95: la wildcard 0.0.0.31 lascia liberi gli ultimi 5 bit, cioè 32 indirizzi a partire da .64 (la subnet 192.168.10.64/27).",
+          "keyPoints": [
+            "31 = 5 bit liberi = 32 indirizzi",
+            "Corrisponde a /27"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "host",
+          "prompt": "Scrivi in due modi equivalenti la condizione \"solo l'host 10.0.0.5\".",
+          "answer": "`host 10.0.0.5` oppure `10.0.0.5 0.0.0.0`: la wildcard tutta a zero richiede che ogni bit coincida.",
+          "keyPoints": [
+            "host = wildcard 0.0.0.0"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "acl-standard-extended",
+        "acl-config",
+        "ospf-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "acl-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Scrivere e applicare un'ACL estesa named",
+      "summary": "Un esempio completo: consentire il web verso un server, bloccare il resto del traffico da una VLAN, e modificare l'ACL senza riscriverla.",
+      "body": "### Obiettivo\nLa VLAN Ospiti (192.168.50.0/24) può raggiungere il server web interno 10.10.10.80 solo su HTTPS, può navigare su Internet e non deve raggiungere altre reti interne (10.0.0.0/8).\n\n```\nR1(config)# ip access-list extended OSPITI-IN\nR1(config-ext-nacl)# 10 permit tcp 192.168.50.0 0.0.0.255 host 10.10.10.80 eq 443\nR1(config-ext-nacl)# 20 permit udp 192.168.50.0 0.0.0.255 host 10.10.10.53 eq 53\nR1(config-ext-nacl)# 30 deny ip 192.168.50.0 0.0.0.255 10.0.0.0 0.255.255.255\nR1(config-ext-nacl)# 40 permit ip 192.168.50.0 0.0.0.255 any\nR1(config-ext-nacl)# exit\nR1(config)# interface gigabitEthernet0/0.50\nR1(config-subif)# ip access-group OSPITI-IN in\n```\n- La regola 20 consente il DNS interno, necessario per risolvere i nomi.\n- L'ordine conta: il permit verso il server (10) deve precedere il deny verso 10.0.0.0/8 (30).\n- Applicata **in ingresso** sulla sotto-interfaccia degli ospiti, cioè vicino all'origine.\n\n### Modificare una ACL named\nI numeri di sequenza permettono di inserire o togliere singole righe:\n```\nR1(config)# ip access-list extended OSPITI-IN\nR1(config-ext-nacl)# 15 permit icmp 192.168.50.0 0.0.0.255 host 10.10.10.80 echo\nR1(config-ext-nacl)# no 20\n```\n\n### Verifica\n```\nR1# show access-lists OSPITI-IN\nExtended IP access list OSPITI-IN\n    10 permit tcp 192.168.50.0 0.0.0.255 host 10.10.10.80 eq 443 (152 matches)\n    ...\nR1# show ip interface gigabitEthernet0/0.50 | include access list\n```\nI contatori *matches* mostrano quali regole vengono usate; una regola con zero corrispondenze dopo molto tempo è da rivedere.",
+      "trackId": "ccna",
+      "topicId": "acl",
+      "difficulty": 2,
+      "prerequisites": [
+        "acl"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:4.6"
+      ],
+      "sources": [
+        {
+          "title": "Configure Commonly Used IP ACLs",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "acl",
+        "named-acl",
+        "configurazione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "order",
+          "prompt": "Nella ACL OSPITI-IN, cosa succederebbe se la regola `deny ip 192.168.50.0 0.0.0.255 10.0.0.0 0.255.255.255` fosse la prima?",
+          "answer": "Il traffico HTTPS verso 10.10.10.80 e il DNS verso 10.10.10.53 verrebbero bloccati, perché quegli indirizzi rientrano in 10.0.0.0/8 e il router si ferma alla prima regola che corrisponde. I permit specifici devono precedere il deny generico.",
+          "keyPoints": [
+            "Prima corrispondenza",
+            "Specifico prima del generico"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "edit",
+          "prompt": "Come inserisci una nuova regola tra la 10 e la 20 di un'ACL named senza riscriverla?",
+          "answer": "Si entra in `ip access-list extended <nome>` e si scrive la regola con un numero di sequenza intermedio, ad esempio `15 permit ...`. Con `no <numero>` si cancella una singola regola.",
+          "keyPoints": [
+            "Numeri di sequenza",
+            "no <seq> per cancellare"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "acl-standard-extended",
+        "acl-wildcard"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "port-security",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Port Security: limitare i MAC address su una porta",
+      "summary": "Port Security limita quanti e quali MAC address possono usare una porta. Tre modalità di violazione: protect, restrict e shutdown, quella di default.",
+      "body": "**Port Security** controlla i MAC address di origine dei frame ricevuti su una porta. Si configura solo su porte **access** o **trunk statiche**, non su porte in modalità dinamica.\n\n```\nSW1(config)# interface gigabitEthernet1/0/10\nSW1(config-if)# switchport mode access\nSW1(config-if)# switchport port-security\nSW1(config-if)# switchport port-security maximum 2\nSW1(config-if)# switchport port-security mac-address sticky\nSW1(config-if)# switchport port-security violation restrict\n```\n- **Massimo di default: 1** MAC address.\n- `mac-address sticky`: i MAC appresi dinamicamente vengono aggiunti alla **running-config**. Restano dopo un riavvio solo se si salva la configurazione.\n\n### Modalità di violazione\n| Modalità | Scarta i frame non autorizzati | Log/SNMP | Contatore violazioni | Porta |\n|---|---|---|---|---|\n| **protect** | sì | no | no | resta attiva |\n| **restrict** | sì | sì | sì | resta attiva |\n| **shutdown** (default) | sì | sì | sì | **err-disabled** |\n\nEsiste anche `shutdown vlan`, che disattiva solo la VLAN interessata sulla porta.\n\n### Verifica e ripristino\n```\nSW1# show port-security interface gigabitEthernet1/0/10\nSW1# show port-security address\nSW1(config-if)# shutdown\nSW1(config-if)# no shutdown\n```\nCon `errdisable recovery cause psecure-violation` il ripristino diventa automatico.\n\n### Uso tipico\nUna porta in sala riunioni con `maximum 2` (telefono IP + PC) impedisce di collegare uno switch con molti dispositivi. Port Security limita anche gli attacchi di **MAC flooding**, che cercano di riempire la MAC Address Table.",
+      "trackId": "ccna",
+      "topicId": "layer2-security",
+      "difficulty": 2,
+      "prerequisites": [
+        "vlans"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.7",
+        "ccna-v2:4.7.e"
+      ],
+      "sources": [
+        {
+          "title": "Security Configuration Guide, Cisco IOS 15.2(7)Ex (Catalyst 2960-L) — Port Security",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960l/software/15-2_7_e/configuration_guide/sec/b_1527e_security_2960l_cg/port_security.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "port-security",
+        "sicurezza",
+        "err-disabled"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "modes",
+          "prompt": "Confronta le modalità di violazione protect, restrict e shutdown.",
+          "answer": "Tutte scartano i frame dei MAC non autorizzati. Protect lo fa in silenzio, senza log né contatore. Restrict genera log/trap SNMP e incrementa il contatore, ma la porta resta attiva. Shutdown, il default, porta l'interfaccia in err-disabled.",
+          "keyPoints": [
+            "protect: silenzioso",
+            "restrict: log + contatore",
+            "shutdown: err-disabled (default)"
+          ],
+          "commonMistakes": [
+            "Pensare che protect generi log",
+            "Pensare che la modalità di default sia restrict"
+          ]
+        },
+        {
+          "key": "sticky",
+          "prompt": "Hai configurato `mac-address sticky`, lo switch si riavvia e i MAC appresi spariscono. Perché?",
+          "answer": "Gli indirizzi sticky vengono scritti nella running-config. Se non si salva con `copy running-config startup-config` (o `write memory`), dopo il riavvio vanno persi.",
+          "keyPoints": [
+            "Sticky → running-config",
+            "Salvare la configurazione"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dhcp-snooping",
+        "portfast-bpduguard"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dhcp-snooping",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "DHCP snooping: fermare i server DHCP non autorizzati",
+      "summary": "Lo switch distingue porte trusted e untrusted. Sulle untrusted scarta i messaggi da server DHCP e costruisce una tabella di binding usata anche da DAI.",
+      "body": "Un server DHCP non autorizzato, anche solo un router domestico collegato per errore, può assegnare agli host un **Default Gateway falso**: il traffico passa da lui (*man-in-the-middle*) o non esce affatto.\n\n### Come funziona\n- Ogni porta è **untrusted** per default. Si configurano come **trusted** solo le porte verso il vero server DHCP e gli uplink verso il resto della rete.\n- Su una porta untrusted lo switch **scarta i messaggi da server** (DHCPOFFER, DHCPACK, DHCPNAK).\n- Per i messaggi dei client lo switch verifica anche che il MAC address di origine coincida con il campo client MAC del messaggio DHCP.\n- Dalle risposte ACK lo switch costruisce la **binding table**: MAC, IP, VLAN, porta e lease di ogni client.\n\n### Configurazione\n```\nSW1(config)# ip dhcp snooping\nSW1(config)# ip dhcp snooping vlan 10,20\nSW1(config)# interface gigabitEthernet1/0/48\nSW1(config-if)# ip dhcp snooping trust\nSW1(config)# interface range gigabitEthernet1/0/1 - 24\nSW1(config-if-range)# ip dhcp snooping limit rate 10\n```\nDHCP snooping è **disattivato per default** e va abilitato sia globalmente sia per VLAN.\n\n### Option 82\nCon snooping attivo lo switch inserisce per default l'**opzione 82** (informazioni sull'agente relay) nelle richieste. Se il server o un relay a monte non la accettano da uno switch di accesso, i client non ottengono indirizzi: in quel caso si disattiva con `no ip dhcp snooping information option`.\n\n### Verifica\n```\nSW1# show ip dhcp snooping\nSW1# show ip dhcp snooping binding\n```",
+      "trackId": "ccna",
+      "topicId": "layer2-security",
+      "difficulty": 2,
+      "prerequisites": [
+        "dhcp",
+        "vlans"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.7",
+        "ccna-v2:4.7.a"
+      ],
+      "sources": [
+        {
+          "title": "Catalyst 2960-Plus/2960-C Configuration Guide 15.2(3)E — Configuring DHCP",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_3_e/consolidated_guide/b_1523e_2960p_2960c_cg/m_1522e_sec_dhcp_2960_cg.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dhcp-snooping",
+        "sicurezza",
+        "rogue-dhcp"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "trust",
+          "prompt": "Su quali porte configuri `ip dhcp snooping trust` e cosa succede se dimentichi l'uplink verso il server?",
+          "answer": "Sulle porte verso il server DHCP legittimo e sugli uplink verso gli switch di distribuzione o il router che fa da relay. Se l'uplink resta untrusted, lo switch scarta le OFFER e gli ACK del server vero e nessun client ottiene un indirizzo.",
+          "keyPoints": [
+            "Trusted: server e uplink",
+            "Untrusted scarta OFFER/ACK"
+          ],
+          "commonMistakes": [
+            "Mettere trusted le porte degli utenti"
+          ]
+        },
+        {
+          "key": "binding",
+          "prompt": "A cosa serve la binding table di DHCP snooping oltre a bloccare i server non autorizzati?",
+          "answer": "Registra per ogni client MAC, IP, VLAN e porta. Altre funzioni di sicurezza la usano come fonte di verità, in particolare Dynamic ARP Inspection (e IP Source Guard) per verificare che un host usi davvero l'indirizzo che gli è stato assegnato.",
+          "keyPoints": [
+            "MAC-IP-VLAN-porta",
+            "Usata da DAI"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dynamic-arp-inspection",
+        "dhcp-dora",
+        "port-security"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "dynamic-arp-inspection",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Dynamic ARP Inspection contro l'ARP spoofing",
+      "summary": "DAI controlla i messaggi ARP ricevuti sulle porte untrusted e li confronta con la binding table di DHCP snooping. Un ARP che non corrisponde viene scartato.",
+      "body": "L'**ARP spoofing** (o *ARP poisoning*) sfrutta il fatto che ARP non ha autenticazione: un attaccante invia ARP Reply non richiesti dicendo \"l'IP del gateway è il mio MAC\". Gli host aggiornano la cache ARP e inviano il traffico all'attaccante.\n\n### Come funziona DAI\n- Come per DHCP snooping, le porte sono **untrusted per default**.\n- Su una porta untrusted, ogni messaggio ARP viene confrontato con la **binding table di DHCP snooping**: la coppia IP–MAC dichiarata deve corrispondere a un binding valido su quella VLAN e quella porta.\n- Gli ARP non validi vengono **scartati** e registrati.\n- Sulle porte trusted (uplink, router) non si fa alcun controllo.\n\n### Configurazione\n```\nSW1(config)# ip arp inspection vlan 10,20\nSW1(config)# interface gigabitEthernet1/0/48\nSW1(config-if)# ip arp inspection trust\n```\nPrerequisito: **DHCP snooping attivo** sulle stesse VLAN. Gli host con IP statico non hanno un binding: servono **ARP ACL** dedicate, altrimenti i loro ARP vengono scartati.\n\n### Rate limit\nSulle porte untrusted DAI limita per default gli ARP a **15 pacchetti al secondo**. Se il limite viene superato, la porta va in **err-disabled**.\n```\nSW1(config-if)# ip arp inspection limit rate 25\n```\n\n### Verifiche facoltative\n`ip arp inspection validate src-mac dst-mac ip` aggiunge controlli di coerenza tra header Ethernet e contenuto ARP.",
+      "trackId": "ccna",
+      "topicId": "layer2-security",
+      "difficulty": 3,
+      "prerequisites": [
+        "arp",
+        "layer2-security"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.7",
+        "ccna-v2:4.7.b"
+      ],
+      "sources": [
+        {
+          "title": "Security Configuration Guide, Cisco IOS XE 17.8.x (Catalyst 9300) — Configuring Dynamic ARP Inspection",
+          "publisher": "Cisco",
+          "type": "vendor_docs",
+          "url": "https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9300/software/release/17-8/configuration_guide/sec/b_178_sec_9300_cg/configuring_dynamic_arp_inspection.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "dai",
+        "arp-spoofing",
+        "sicurezza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "how",
+          "prompt": "Come decide DAI se un ARP ricevuto su una porta untrusted è legittimo?",
+          "answer": "Confronta l'indirizzo IP e il MAC address dichiarati nel messaggio ARP con la binding table di DHCP snooping (o con un'ARP ACL per gli host statici). Se non esiste un binding corrispondente per quella VLAN e porta, l'ARP viene scartato.",
+          "keyPoints": [
+            "Binding table di DHCP snooping",
+            "ARP ACL per host statici",
+            "Solo porte untrusted"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "static",
+          "prompt": "Dopo aver attivato DAI, una stampante con IP statico non comunica più. Perché?",
+          "answer": "La stampante non ha ottenuto l'indirizzo via DHCP, quindi nella binding table non esiste alcun binding per lei. DAI considera i suoi ARP non validi e li scarta. Serve un'ARP ACL che autorizzi la sua coppia IP–MAC (o una voce statica nella binding table).",
+          "keyPoints": [
+            "Nessun binding per gli IP statici",
+            "ARP ACL"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "dhcp-snooping",
+        "arp-resolution"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ra-guard-storm-control",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Storm control e RA Guard",
+      "summary": "Storm control limita il volume di broadcast, multicast o unicast su una porta. RA Guard blocca i Router Advertisement IPv6 che arrivano da porte non autorizzate.",
+      "body": "| | Storm control | RA Guard |\n|---|---|---|\n| Protegge da | tempeste di traffico (loop, schede guaste, attacchi) | falsi router IPv6 che annunciano prefissi e gateway |\n| Cosa osserva | il volume di traffico broadcast, multicast o unicast in ingresso | i messaggi ICMPv6 Router Advertisement |\n| Azione | scarta il traffico oltre la soglia; facoltativamente `shutdown` o trap | scarta gli RA sulle porte dove non è previsto un router |\n\n### Storm control\nLa soglia si esprime in percentuale della banda, bit/s o pacchetti/s, per ciascun tipo di traffico:\n```\nSW1(config)# interface gigabitEthernet1/0/10\nSW1(config-if)# storm-control broadcast level 5.00 3.00\nSW1(config-if)# storm-control action trap\n```\nCon due valori (5.00 e 3.00) si indicano la soglia di blocco e quella di ripristino. È una difesa in più contro gli effetti di un loop di livello 2, non un sostituto dello Spanning Tree.\n\n### RA Guard\nCon SLAAC gli host accettano gli RA e configurano prefisso e Default Gateway. Un dispositivo che invia RA falsi può dirottare il traffico IPv6, anche in una rete che \"non usa IPv6\", perché gli host moderni hanno IPv6 attivo per default. RA Guard (RFC 6105) filtra gli RA nello switch, consentendoli solo sulle porte verso i router legittimi.\n```\nSW1(config)# ipv6 nd raguard policy HOST\nSW1(config-nd-raguard)# device-role host\nSW1(config)# interface range gigabitEthernet1/0/1 - 24\nSW1(config-if-range)# ipv6 nd raguard attach-policy HOST\n```",
+      "trackId": "ccna",
+      "topicId": "layer2-security",
+      "difficulty": 3,
+      "prerequisites": [
+        "layer2-security",
+        "ipv6-ndp-slaac"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.7",
+        "ccna-v2:4.7.c",
+        "ccna-v2:4.7.d"
+      ],
+      "sources": [
+        {
+          "title": "RFC 6105 — IPv6 Router Advertisement Guard",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/info/rfc6105/",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "storm-control",
+        "ra-guard",
+        "ipv6",
+        "sicurezza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ra",
+          "prompt": "Perché RA Guard è utile anche in una rete aziendale che non ha ancora pianificato IPv6?",
+          "answer": "Perché i sistemi operativi moderni hanno IPv6 attivo per default e accettano i Router Advertisement. Un dispositivo che invia RA falsi può far configurare agli host un indirizzo e un Default Gateway IPv6 controllati da lui, e intercettare il traffico che preferisce IPv6. RA Guard scarta gli RA sulle porte degli host.",
+          "keyPoints": [
+            "IPv6 attivo per default sugli host",
+            "RA falsi = gateway falso",
+            "Filtrare gli RA sulle porte host"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "storm",
+          "prompt": "Storm control sostituisce lo Spanning Tree? Motiva.",
+          "answer": "No. Lo Spanning Tree evita che il loop si formi bloccando le porte ridondanti. Storm control interviene dopo, limitando il volume di broadcast/multicast/unicast su una porta: attenua i danni di un loop o di un dispositivo guasto, ma non rimuove la causa.",
+          "keyPoints": [
+            "STP previene",
+            "Storm control limita i danni"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ipv6-slaac-ndp",
+        "stp-why"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ssh-config",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Accesso SSH a un dispositivo Cisco",
+      "summary": "Hostname, dominio, chiavi RSA, utente locale e linee VTY limitate a SSH: i passi per sostituire Telnet, che trasmette tutto in chiaro.",
+      "body": "**Telnet** (TCP 23) invia username, password e comandi **in chiaro**. **SSH** (TCP **22**) cifra la sessione. Sui dispositivi di rete si usa solo SSH, preferibilmente versione 2.\n\n```\nSW1(config)# hostname SW1\nSW1(config)# ip domain name azienda.local\nSW1(config)# crypto key generate rsa modulus 2048\nSW1(config)# ip ssh version 2\nSW1(config)# username admin privilege 15 secret Pa55-di-esempio\nSW1(config)# enable secret Altra-pa55-di-esempio\nSW1(config)# line vty 0 15\nSW1(config-line)# login local\nSW1(config-line)# transport input ssh\nSW1(config-line)# exec-timeout 10 0\nSW1(config-line)# access-class GESTIONE in\n```\n\n### Perché ogni riga\n- **hostname** e **ip domain name** servono a generare le chiavi: il nome della chiave è `hostname.dominio`.\n- **crypto key generate rsa** crea la coppia di chiavi; con modulus 768 o superiore si può usare SSHv2.\n- **username … secret** salva la password con un hash; `password` invece la lascia in chiaro (o con la debole cifratura tipo 7).\n- **login local** usa il database degli utenti locali.\n- **transport input ssh** rifiuta Telnet sulle linee VTY.\n- **access-class** applica un'ACL standard alle linee VTY: solo la rete di gestione può collegarsi.\n\n### Verifica\n```\nSW1# show ip ssh\nSW1# show ssh\n```\nSu uno switch di livello 2 serve anche un indirizzo di gestione (SVI) e un `ip default-gateway` per essere raggiungibile da altre subnet.",
+      "trackId": "ccna",
+      "topicId": "device-access",
+      "difficulty": 1,
+      "prerequisites": [
+        "ios-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.1"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4253 — The Secure Shell (SSH) Transport Layer Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4253.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Free CCNA 200-301 course (riferimento di studio di Lorenzo)",
+          "publisher": "Jeremy's IT Lab",
+          "type": "course"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ssh",
+        "sicurezza",
+        "vty"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "prereq",
+          "prompt": "Quali prerequisiti servono prima di generare le chiavi RSA per SSH su un dispositivo Cisco, e perché?",
+          "answer": "Un hostname diverso da quello di default e un nome di dominio (`ip domain name`). Il dispositivo usa la combinazione hostname.dominio per nominare la coppia di chiavi RSA; senza, il comando `crypto key generate rsa` viene rifiutato.",
+          "keyPoints": [
+            "hostname",
+            "ip domain name",
+            "Chiave nominata hostname.dominio"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "vty",
+          "prompt": "Quali comandi sulle linee VTY impediscono Telnet e limitano l'accesso alla sola rete di gestione?",
+          "answer": "`transport input ssh` accetta solo SSH; `access-class <ACL> in` applica un'ACL standard che consente solo gli indirizzi della rete di gestione; `login local` richiede utente e password locali.",
+          "keyPoints": [
+            "transport input ssh",
+            "access-class",
+            "login local"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "aaa-tacacs-radius",
+        "secure-file-transfer"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "aaa-tacacs-radius",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "AAA con TACACS+ e RADIUS",
+      "summary": "Autenticazione, autorizzazione e accounting centralizzati: TACACS+ separa le tre funzioni e cifra tutto il pacchetto; RADIUS le combina e protegge solo la password.",
+      "body": "Con molti dispositivi, gestire utenti locali su ognuno diventa ingestibile. **AAA** centralizza:\n- **Authentication**: chi sei (username, password, certificato);\n- **Authorization**: cosa puoi fare (livello di privilegio, comandi consentiti);\n- **Accounting**: cosa hai fatto (registro di accessi e comandi).\n\nIl router o lo switch è il **client AAA**; il server (ad esempio Cisco ISE) verifica le credenziali.\n\n| | TACACS+ | RADIUS |\n|---|---|---|\n| Trasporto | **TCP 49** | **UDP 1812** (autenticazione), 1813 (accounting) |\n| Funzioni AAA | **separate** | autenticazione e autorizzazione **combinate** |\n| Protezione | **tutto il corpo** del pacchetto offuscato | protetta solo la **password** |\n| Uso tipico | amministrazione dei dispositivi, autorizzazione comando per comando | accesso utenti alla rete: 802.1X, Wi-Fi, VPN |\n| Origine | Cisco, oggi descritto in RFC 8907 | standard IETF, RFC 2865 |\n\n### Configurazione di base (client TACACS+)\n```\nR1(config)# aaa new-model\nR1(config)# tacacs server ISE1\nR1(config-server-tacacs)# address ipv4 10.0.100.10\nR1(config-server-tacacs)# key Chiave-condivisa-di-esempio\nR1(config)# aaa authentication login default group tacacs+ local\nR1(config)# aaa authorization exec default group tacacs+ local\nR1(config)# aaa accounting commands 15 default start-stop group tacacs+\n```\nLa parola chiave `local` in fondo è il **fallback**: se il server non risponde, si entra con gli utenti locali. Senza, un guasto del server AAA può chiudere fuori gli amministratori.",
+      "trackId": "ccna",
+      "topicId": "device-access",
+      "difficulty": 2,
+      "prerequisites": [
+        "device-access"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.1"
+      ],
+      "sources": [
+        {
+          "title": "RFC 8907 — The TACACS+ Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/info/rfc8907/",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "RFC 2865 — Remote Authentication Dial In User Service (RADIUS)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2865.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "aaa",
+        "tacacs",
+        "radius",
+        "sicurezza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "compare",
+          "prompt": "Perché per l'amministrazione dei dispositivi di rete si preferisce TACACS+ a RADIUS?",
+          "answer": "Perché TACACS+ separa autenticazione, autorizzazione e accounting, consentendo di autorizzare e registrare ogni singolo comando, e offusca l'intero corpo del pacchetto, non solo la password. Usa inoltre TCP 49. RADIUS combina autenticazione e autorizzazione ed è più adatto all'accesso degli utenti alla rete (802.1X, VPN).",
+          "keyPoints": [
+            "AAA separati",
+            "Autorizzazione per comando",
+            "Tutto il pacchetto protetto"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "fallback",
+          "prompt": "Cosa fa `local` in `aaa authentication login default group tacacs+ local` e quando entra in gioco?",
+          "answer": "È il metodo di riserva: se nessun server TACACS+ risponde, il dispositivo usa il database degli utenti locali. Non viene usato se il server risponde rifiutando le credenziali.",
+          "keyPoints": [
+            "Fallback solo se il server non risponde"
+          ],
+          "commonMistakes": [
+            "Pensare che local venga provato anche quando il server rifiuta la password"
+          ]
+        }
+      ],
+      "related": [
+        "ssh-config"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "secure-file-transfer",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Trasferire configurazioni e immagini IOS in modo sicuro",
+      "summary": "TFTP e FTP trasmettono i file senza cifratura. SCP e SFTP viaggiano dentro SSH: si usano per backup di configurazione e aggiornamenti software.",
+      "body": "| Protocollo | Trasporto | Autenticazione | Cifratura |\n|---|---|---|---|\n| TFTP | UDP 69 | nessuna | no |\n| FTP | TCP 20/21 | username e password in chiaro | no |\n| **SCP** | dentro SSH (TCP 22) | utente SSH | sì |\n| **SFTP** | dentro SSH (TCP 22) | utente SSH | sì |\n\nUna configurazione contiene hash di password, chiavi condivise di AAA e VPN, community SNMP: trasferirla in chiaro espone tutto.\n\n### Backup della configurazione con SCP\n```\nR1# copy running-config scp://admin@10.0.100.50/backup/R1.cfg\n```\n\n### Aggiornare l'immagine IOS\n```\nR1# show flash:\nR1# copy scp://admin@10.0.100.50/images/nuova-immagine.bin flash:\nR1# verify /md5 flash:nuova-immagine.bin\nR1(config)# boot system flash:nuova-immagine.bin\nR1# copy running-config startup-config\nR1# reload\n```\nPrima di riavviare si controlla che lo spazio in flash sia sufficiente e che l'hash corrisponda a quello pubblicato dal produttore.\n\n### Router come server SCP\n```\nR1(config)# ip scp server enable\n```\nRichiede SSH e AAA configurati.",
+      "trackId": "ccna",
+      "topicId": "device-access",
+      "difficulty": 2,
+      "prerequisites": [
+        "device-access"
+      ],
+      "readingMinutes": 3,
+      "objectives": [
+        "ccna-v2:4.2"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4253 — The Secure Shell (SSH) Transport Layer Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4253.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "scp",
+        "sftp",
+        "backup",
+        "ios"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "why",
+          "prompt": "Perché per il backup delle configurazioni si usa SCP o SFTP invece di TFTP?",
+          "answer": "TFTP non ha autenticazione e trasmette il file in chiaro su UDP 69. Una configurazione contiene informazioni sensibili (hash delle password, chiavi AAA e VPN, community SNMP). SCP e SFTP viaggiano dentro una sessione SSH cifrata e autenticata.",
+          "keyPoints": [
+            "TFTP: niente autenticazione né cifratura",
+            "SCP/SFTP dentro SSH"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ssh-config",
+        "ios-essential-show"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ipsec-vpn",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "VPN IPsec: site-to-site, remote access, AH ed ESP",
+      "summary": "IPsec protegge i pacchetti IP con autenticazione e cifratura. In tunnel mode cifra l'intero pacchetto originale e aggiunge un nuovo header: è la base delle VPN site-to-site.",
+      "body": "Una **VPN** crea un collegamento privato e cifrato attraverso una rete non fidata, tipicamente Internet.\n\n### Tipi di VPN\n- **Site-to-site**: due gateway (router o firewall) collegano permanentemente due sedi. Gli host non sanno nulla della VPN: il traffico viene cifrato quando esce dal gateway.\n- **Remote access**: un singolo utente con un client software (o TLS nel browser) si collega alla rete aziendale da qualsiasi luogo.\n\n### I protocolli di IPsec\n| | AH | ESP |\n|---|---|---|\n| Integrità e autenticazione | sì | sì |\n| **Cifratura** | **no** | **sì** |\n| Protocollo IP | 51 | 50 |\n| Compatibilità con NAT | no | sì, con NAT-Traversal (UDP 4500) |\n\nIn pratica si usa quasi sempre **ESP**. Le chiavi si negoziano con **IKE** (oggi IKEv2), che usa UDP 500.\n\n### Transport e tunnel mode\n- **Transport mode**: protegge il **payload**; l'header IP originale resta. Usato tra due host.\n- **Tunnel mode**: protegge **l'intero pacchetto originale** e aggiunge un **nuovo header IP** con gli indirizzi dei due gateway. Quando un estremo della Security Association è un gateway, si usa il tunnel mode.\n\n### Security Association\nUna **SA** è unidirezionale: per una comunicazione bidirezionale servono due SA IPsec, una per verso. Ogni SA definisce algoritmi, chiavi e durata.",
+      "trackId": "ccna",
+      "topicId": "ipsec-vpn",
+      "difficulty": 2,
+      "prerequisites": [
+        "security-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:4.5"
+      ],
+      "sources": [
+        {
+          "title": "RFC 4301 — Security Architecture for the Internet Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc4301.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ipsec",
+        "vpn",
+        "esp",
+        "tunnel-mode"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "ah-esp",
+          "prompt": "Una VPN deve garantire riservatezza del traffico e attraversare un router che fa NAT. Usi AH o ESP? Perché?",
+          "answer": "ESP. AH fornisce integrità e autenticazione ma non cifra, e protegge anche campi dell'header IP che il NAT modifica, quindi non funziona attraverso il NAT. ESP cifra il payload e, con NAT-Traversal (incapsulamento in UDP 4500), attraversa il NAT.",
+          "keyPoints": [
+            "AH non cifra",
+            "AH incompatibile con NAT",
+            "ESP + NAT-T"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "tunnel",
+          "prompt": "Che differenza c'è tra transport mode e tunnel mode in IPsec?",
+          "answer": "In transport mode IPsec protegge il payload e mantiene l'header IP originale: si usa tra due host. In tunnel mode protegge l'intero pacchetto originale, header compreso, e aggiunge un nuovo header IP con gli indirizzi dei gateway: è la modalità delle VPN site-to-site.",
+          "keyPoints": [
+            "Transport: header originale visibile",
+            "Tunnel: nuovo header, pacchetto intero protetto"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "nat-terminology"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "syslog-severity",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Syslog: leggere un messaggio e i livelli di severità",
+      "summary": "Ogni messaggio syslog ha facility, severità da 0 a 7 e mnemonico. Configurando un livello si ricevono quel livello e tutti quelli più gravi.",
+      "body": "### Anatomia di un messaggio Cisco\n```\n*Nov 27 10:15:42.123: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/1, changed state to down\n```\n| Parte | Valore | Significato |\n|---|---|---|\n| Timestamp | `*Nov 27 10:15:42.123` | l'asterisco indica che l'orologio non è sincronizzato (manca NTP) |\n| Facility | `LINEPROTO` | la funzione che genera il messaggio |\n| Severità | `5` | Notice |\n| Mnemonico | `UPDOWN` | il tipo di evento |\n| Testo | `Line protocol on …` | la descrizione |\n\n### Livelli (RFC 5424)\n| Livello | Nome | Esempio |\n|---|---|---|\n| 0 | Emergency | sistema inutilizzabile |\n| 1 | Alert | intervento immediato |\n| 2 | Critical | condizione critica |\n| 3 | Error | errore |\n| 4 | Warning | avviso |\n| 5 | Notice | evento normale ma significativo (interfaccia up/down) |\n| 6 | Informational | informativo |\n| 7 | Debug | output di `debug` |\n\nFrase per ricordarli: *Every Awesome Cisco Engineer Will Need Ice cream Daily*.\n\n### Configurare le destinazioni\n```\nR1(config)# logging host 10.0.100.30\nR1(config)# logging trap warnings       ! al server: livelli 0–4\nR1(config)# logging buffered 16384 informational\nR1(config)# logging console errors\nR1(config)# service timestamps log datetime msec\nR1(config)# terminal monitor             ! in EXEC: vedere i log in una sessione SSH\n```\nUn livello include **sé stesso e tutti i livelli più gravi** (numero più basso). Per il server syslog si usano spesso le facility **local0–local7** (valori 16–23), configurabili con `logging facility`.",
+      "trackId": "ccna",
+      "topicId": "syslog-snmp",
+      "difficulty": 1,
+      "prerequisites": [
+        "ios-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:5.6"
+      ],
+      "sources": [
+        {
+          "title": "RFC 5424 — The Syslog Protocol",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc5424.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "syslog",
+        "logging",
+        "severita"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "levels",
+          "prompt": "Con `logging trap notifications` (livello 5), quali messaggi arrivano al server syslog?",
+          "answer": "I messaggi di livello da 0 a 5: Emergency, Alert, Critical, Error, Warning e Notice. Informational (6) e Debug (7) no. Un livello include sé stesso e tutti quelli più gravi.",
+          "keyPoints": [
+            "Livello configurato + quelli più gravi",
+            "0–5"
+          ],
+          "commonMistakes": [
+            "Pensare che arrivino solo i messaggi di livello 5",
+            "Pensare che arrivino i livelli 5–7"
+          ]
+        },
+        {
+          "key": "parse",
+          "prompt": "Nel messaggio `%OSPF-5-ADJCHG: Process 1, Nbr 2.2.2.2 on Gi0/0 from FULL to DOWN` individua facility, severità e mnemonico.",
+          "answer": "Facility OSPF, severità 5 (Notice), mnemonico ADJCHG (cambio di adiacenza). Il testo indica che il vicino 2.2.2.2 è passato da FULL a DOWN.",
+          "keyPoints": [
+            "%FACILITY-SEVERITÀ-MNEMONICO"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "snmp-fundamentals",
+        "ios-essential-show"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "snmp-fundamentals",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "SNMP: manager, agent, MIB e i messaggi principali",
+      "summary": "Il manager interroga gli agent sui dispositivi con Get e li modifica con Set; gli agent avvisano il manager con Trap e Inform. SNMPv3 aggiunge autenticazione e cifratura.",
+      "body": "**SNMP** (Simple Network Management Protocol) permette a un sistema di monitoraggio di leggere lo stato dei dispositivi: utilizzo CPU, traffico sulle interfacce, temperatura, stato dei link.\n\n### Componenti\n- **Manager** (NMS): il software di monitoraggio.\n- **Agent**: il processo SNMP sul router o sullo switch.\n- **MIB**: la struttura delle informazioni disponibili. Ogni valore ha un **OID**, un identificativo numerico gerarchico.\n\n### Messaggi (SNMPv2)\n| PDU | Direzione | Uso |\n|---|---|---|\n| **GetRequest** | manager → agent | leggi un valore |\n| **GetNextRequest** | manager → agent | leggi il valore successivo nella MIB |\n| **GetBulkRequest** | manager → agent | leggi molti valori in una richiesta |\n| **SetRequest** | manager → agent | modifica un valore |\n| **Response** | agent → manager | risposta alle richieste |\n| **SNMPv2-Trap** | agent → manager | notifica di un evento, senza conferma |\n| **InformRequest** | agent → manager | notifica con conferma di ricezione |\n\nLe richieste arrivano all'agent su **UDP 161**; trap e inform vanno al manager su **UDP 162**.\n\n### Versioni\n| Versione | Sicurezza |\n|---|---|\n| v1, v2c | **community string** in chiaro (una sorta di password condivisa) |\n| **v3** | utenti, **autenticazione** e **cifratura** (livelli noAuthNoPriv, authNoPriv, authPriv) |\n\n```\nR1(config)# snmp-server group MONITOR v3 priv\nR1(config)# snmp-server user nms MONITOR v3 auth sha Auth-di-esempio priv aes 128 Priv-di-esempio\nR1(config)# snmp-server host 10.0.100.40 version 3 priv nms\n```\nIn produzione si usa SNMPv3 con authPriv; le community v2c, se proprio servono, solo in lettura e limitate da ACL.",
+      "trackId": "ccna",
+      "topicId": "syslog-snmp",
+      "difficulty": 2,
+      "prerequisites": [
+        "ios-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:5.4"
+      ],
+      "sources": [
+        {
+          "title": "RFC 3416 — Version 2 of the Protocol Operations for SNMP",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://rfc-editor.org/rfc/rfc3416",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "original",
+      "reviewStatus": "proposed",
+      "tags": [
+        "snmp",
+        "monitoraggio",
+        "mib"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "trap-inform",
+          "prompt": "Che differenza c'è tra una Trap e un Inform SNMP?",
+          "answer": "Entrambi sono notifiche inviate dall'agent al manager senza che il manager le abbia richieste. La Trap non prevede conferma: se va persa, l'agent non lo sa. L'Inform richiede una Response dal manager e viene ritrasmesso se la conferma non arriva.",
+          "keyPoints": [
+            "Trap: nessuna conferma",
+            "Inform: confermato"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "v3",
+          "prompt": "Perché SNMPv2c è considerato insicuro e cosa offre SNMPv3?",
+          "answer": "SNMPv2c autentica solo con una community string che viaggia in chiaro: chi intercetta il traffico la legge, e una community read-write consente di modificare la configurazione. SNMPv3 introduce utenti con autenticazione (es. SHA) e cifratura (es. AES), con il livello authPriv.",
+          "keyPoints": [
+            "v2c: community in chiaro",
+            "v3: auth + priv"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "syslog-severity",
+        "network-management-approaches"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "network-management-approaches",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Gestire la rete: device-based, controller, cloud e automazione",
+      "summary": "Dalla CLI su ogni dispositivo al controller che gestisce centinaia di apparati con policy centrali: differenze, vantaggi e limiti di ciascun approccio.",
+      "body": "| Approccio | Come funziona | Punti di forza | Limiti |\n|---|---|---|---|\n| **Device-based** | CLI o GUI su ogni dispositivo, uno alla volta | controllo totale, nessuna dipendenza | lento, errori di battitura, configurazioni che divergono |\n| **Automazione (es. Ansible)** | script e playbook applicano le stesse modifiche a molti dispositivi | ripetibilità, configurazioni versionate | serve competenza; un errore si propaga ovunque |\n| **Controller-based (SDN)** | un controller centrale definisce le policy e programma i dispositivi | visione d'insieme, policy coerenti, API | dipendenza dal controller e dal produttore |\n| **Cloud-based** | la console di gestione è un servizio in cloud (es. Meraki) | nessun server da gestire, accesso ovunque | richiede connettività verso il cloud, abbonamento |\n\n### Piani di un dispositivo\n- **Data plane**: inoltra il traffico (switching, routing, ACL in hardware).\n- **Control plane**: decide come inoltrare (protocolli di routing, STP, ARP).\n- **Management plane**: accesso per gestirlo (SSH, SNMP, API).\n\nNel modello **controller-based** il controller assume gran parte del control plane e della gestione, mentre il data plane resta nei dispositivi.\n\n### Le API del controller\n- **Northbound**: verso le applicazioni e gli script degli amministratori, tipicamente **REST** con dati in **JSON**.\n- **Southbound**: verso i dispositivi, ad esempio NETCONF, RESTCONF, OpenFlow o la CLI via SSH.\n\n### Intent-based networking\nL'amministratore descrive l'**intento** (\"gli ospiti accedono solo a Internet\") e il controller traduce l'intento in configurazioni su tutti i dispositivi, verificandone l'applicazione.",
+      "trackId": "ccna",
+      "topicId": "network-automation",
+      "difficulty": 2,
+      "prerequisites": [
+        "ios-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:5.3"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "sdn",
+        "controller",
+        "automazione",
+        "gestione"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "planes",
+          "prompt": "Distingui data plane, control plane e management plane con un esempio ciascuno.",
+          "answer": "Data plane: inoltrare un frame o un pacchetto, applicare un'ACL in hardware. Control plane: calcolare le route con OSPF, eleggere il Root Bridge, risolvere ARP. Management plane: accedere al dispositivo via SSH, interrogarlo con SNMP o tramite API.",
+          "keyPoints": [
+            "Data: inoltro",
+            "Control: decisioni e protocolli",
+            "Management: accesso e gestione"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "apis",
+          "prompt": "Cosa sono le API northbound e southbound di un controller SDN?",
+          "answer": "Le northbound collegano il controller alle applicazioni e agli script degli amministratori, di solito con REST e JSON. Le southbound collegano il controller ai dispositivi che gestisce, con protocolli come NETCONF, RESTCONF, OpenFlow o SSH.",
+          "keyPoints": [
+            "Northbound: verso app (REST/JSON)",
+            "Southbound: verso dispositivi"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "ansible-ios-command",
+        "ai-network-operations"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ansible-ios-command",
+      "revision": 1,
+      "kind": "config",
+      "language": "it",
+      "title": "Eseguire comandi su IOS con Ansible",
+      "summary": "Ansible si collega ai dispositivi via SSH senza agent e applica playbook YAML. Il modulo ios_command esegue comandi show; per le modifiche si usa ios_config.",
+      "body": "**Ansible** è uno strumento di automazione **agentless**: non richiede software sui dispositivi, si collega via **SSH** ed esegue i task descritti in **playbook YAML**. Il modello è *push*: il nodo di controllo invia le istruzioni.\n\n### Inventario\n```ini\n[access_switches]\nsw1 ansible_host=10.0.99.11\nsw2 ansible_host=10.0.99.12\n\n[access_switches:vars]\nansible_network_os=cisco.ios.ios\nansible_connection=ansible.netcommon.network_cli\nansible_user=automazione\n```\n\n### Playbook: raccogliere informazioni\n```yaml\n- name: Verifica versione e interfacce\n  hosts: access_switches\n  gather_facts: false\n  tasks:\n    - name: Esegui comandi show\n      cisco.ios.ios_command:\n        commands:\n          - show version\n          - show ip interface brief\n        wait_for:\n          - result[0] contains IOS\n      register: output\n\n    - name: Mostra le interfacce\n      ansible.builtin.debug:\n        var: output.stdout_lines[1]\n```\n```\n$ ansible-playbook -i inventario.ini verifica.yml\n```\n\n### Da sapere\n- `ios_command` invia comandi e restituisce l'output, ma **non** funziona in modalità di configurazione: per modificare la configurazione si usa `cisco.ios.ios_config` o i moduli specifici per risorsa.\n- `wait_for` ripete il comando finché la condizione è vera o scade il tempo; con `match: any` basta una condizione.\n- Le credenziali non vanno scritte nel playbook: si usano **Ansible Vault** o variabili d'ambiente.",
+      "trackId": "ccna",
+      "topicId": "network-automation",
+      "difficulty": 2,
+      "prerequisites": [
+        "network-automation"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:5.5"
+      ],
+      "sources": [
+        {
+          "title": "cisco.ios.ios_command module",
+          "publisher": "Ansible Community Documentation",
+          "type": "vendor_docs",
+          "url": "https://docs.ansible.com/projects/ansible/latest/collections/cisco/ios/ios_command_module.html",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ansible",
+        "automazione",
+        "yaml"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "module",
+          "prompt": "Vuoi aggiungere una VLAN a 50 switch con Ansible. Usi ios_command? Motiva.",
+          "answer": "No. `ios_command` esegue comandi e ne restituisce l'output ma non supporta la modalità di configurazione: è adatto ai comandi show. Per modificare la configurazione si usa `cisco.ios.ios_config` o un modulo dedicato come `cisco.ios.ios_vlans`.",
+          "keyPoints": [
+            "ios_command: solo lettura/EXEC",
+            "ios_config o moduli di risorsa per modificare"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "agentless",
+          "prompt": "Cosa significa che Ansible è agentless e quale protocollo usa con i dispositivi Cisco IOS?",
+          "answer": "Che non serve installare software sui dispositivi gestiti: il nodo di controllo si collega direttamente via SSH (connessione network_cli) ed esegue i task. Strumenti come Puppet e Chef invece usano di norma un agent sul nodo.",
+          "keyPoints": [
+            "Nessun agent",
+            "SSH / network_cli",
+            "Push"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "network-management-approaches"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "ai-network-operations",
+      "revision": 1,
+      "kind": "enterprise",
+      "language": "it",
+      "title": "AI nelle operazioni di rete: agenti e prompt efficaci",
+      "summary": "Un sistema di AI agentica pianifica ed esegue passi usando strumenti, sotto controllo umano. Un buon prompt dà contesto, vincoli e formato, e non contiene segreti.",
+      "body": "Il blueprint CCNA v2.0 chiede di saper descrivere il ruolo dell'**AI agentica** nelle operazioni di rete e di scegliere un **prompt** adatto, considerando l'uso responsabile.\n\n### AI generativa e AI agentica\n- **AI generativa**: risponde a una richiesta producendo testo, codice o configurazioni. Non agisce da sola.\n- **AI agentica**: riceve un obiettivo, lo scompone in passi e usa **strumenti** (API del controller, comandi show, ticket) per raccoglierne i dati e, se autorizzata, applicare modifiche. Osserva il risultato e decide il passo successivo.\n\nEsempio: \"Gli utenti del secondo piano sono lenti\". Un agente legge la telemetria, esegue `show interfaces` sugli switch del piano, trova un uplink con CRC in crescita e propone di aprire un ticket per la sostituzione del cavo.\n\n### Uso responsabile\n- **Human in the loop**: le azioni che cambiano la rete vanno approvate da una persona, almeno finché l'agente non ha dimostrato affidabilità su un perimetro limitato.\n- **Privilegi minimi**: l'agente usa un account con i soli permessi necessari, idealmente in sola lettura.\n- **Tracciabilità**: ogni azione registrata nei log.\n- **Verifica**: un modello può produrre comandi plausibili ma errati. Si controlla l'output prima di applicarlo, preferibilmente in laboratorio.\n\n### Scegliere un prompt\n| Prompt debole | Prompt migliore |\n|---|---|\n| \"Configura OSPF\" | \"Scrivi la configurazione OSPFv2 single area per un ISR con IOS XE: area 0, Gi0/0/0 verso R2 (10.0.12.1/30, point-to-point), Gi0/0/1 LAN 192.168.1.0/24 passiva, router-id 1.1.1.1. Restituisci solo i comandi e una riga di spiegazione per ognuno.\" |\n\nUn prompt efficace indica **piattaforma e versione**, **contesto** e **vincoli**, il **formato** atteso e cosa fare in caso di dubbio.\n\n### Cosa non inserire mai\nPassword, chiavi condivise, community SNMP, configurazioni complete non anonimizzate, indirizzi pubblici e nomi interni, quando il servizio AI è esterno all'azienda. Si sostituiscono con segnaposto.",
+      "trackId": "ccna",
+      "topicId": "network-automation",
+      "difficulty": 2,
+      "prerequisites": [
+        "network-automation"
+      ],
+      "readingMinutes": 5,
+      "objectives": [
+        "ccna-v2:5.1",
+        "ccna-v2:5.2"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "ai",
+        "agentic-ai",
+        "prompt",
+        "operazioni"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "agentic",
+          "prompt": "In cosa si distingue un sistema di AI agentica da un assistente generativo usato in chat, nel contesto delle operazioni di rete?",
+          "answer": "L'assistente generativo produce una risposta (testo, comandi) a una richiesta e si ferma: è l'operatore a decidere e agire. Il sistema agentico riceve un obiettivo, pianifica più passi e usa strumenti (API, comandi, ticket) per raccogliere dati e, se autorizzato, agire, valutando il risultato a ogni passo. Per questo richiede privilegi minimi, approvazione umana e log delle azioni.",
+          "keyPoints": [
+            "Obiettivo → piano → azioni con strumenti",
+            "Human in the loop",
+            "Privilegi minimi e log"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "prompt",
+          "prompt": "Stai per chiedere a un servizio AI esterno di analizzare la running-config di un router. Cosa fai prima di incollarla?",
+          "answer": "Rimuovo o sostituisco con segnaposto ogni dato sensibile: hash e password, chiavi di AAA, VPN e routing, community SNMP, indirizzi pubblici e nomi interni. Poi scrivo un prompt con piattaforma, versione, obiettivo dell'analisi e formato della risposta, e verifico i suggerimenti prima di applicarli.",
+          "keyPoints": [
+            "Niente segreti in un servizio esterno",
+            "Contesto, vincoli, formato",
+            "Verificare l'output"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "network-management-approaches",
+        "ansible-ios-command"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "virtualization-basics",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Hypervisor, macchine virtuali e container",
+      "summary": "Un hypervisor esegue più macchine virtuali, ognuna con il proprio sistema operativo. I container condividono il kernel dell'host: sono più leggeri, ma meno isolati.",
+      "body": "### Hypervisor\nIl software che crea ed esegue le **macchine virtuali** (VM) assegnando a ciascuna CPU, memoria, disco e interfacce di rete virtuali.\n| Tipo | Dove gira | Esempi | Uso |\n|---|---|---|---|\n| **Tipo 1** (bare metal) | direttamente sull'hardware | VMware ESXi, Microsoft Hyper-V, KVM | data center, server aziendali |\n| **Tipo 2** (hosted) | come applicazione su un sistema operativo | VirtualBox, VMware Workstation | laboratori, test sul PC |\n\n### Macchine virtuali e container\n| | Macchina virtuale | Container |\n|---|---|---|\n| Contiene | un sistema operativo completo (guest OS) + applicazioni | applicazione e dipendenze |\n| Kernel | proprio | **condiviso** con l'host |\n| Avvio | minuti | secondi |\n| Isolamento | forte | minore |\n| Esempi | VM Windows Server, VM Linux | Docker, gestiti su larga scala da Kubernetes |\n\n### E la rete?\nLe VM si collegano a uno **switch virtuale** (vSwitch) all'interno dell'host. Il vSwitch ha porte verso le schede virtuali delle VM e usa le schede fisiche del server come uplink. Per questo la porta dello switch fisico verso un host di virtualizzazione è spesso un **trunk 802.1Q**: le VM appartengono a VLAN diverse.\n\n```\nSW1(config)# interface gigabitEthernet1/0/20\nSW1(config-if)# description ESXi-01 vmnic0\nSW1(config-if)# switchport mode trunk\nSW1(config-if)# switchport trunk allowed vlan 10,20,30\nSW1(config-if)# spanning-tree portfast trunk\n```\n\n### Cloud\nIl cloud offre risorse virtualizzate come servizio: **IaaS** (VM e rete), **PaaS** (piattaforma su cui eseguire applicazioni), **SaaS** (applicazione pronta all'uso).",
+      "trackId": "ccna",
+      "topicId": "virtualization",
+      "difficulty": 1,
+      "prerequisites": [
+        "network-devices"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.2",
+        "ccna-v2:2.2.d"
+      ],
+      "sources": [
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "virtualizzazione",
+        "hypervisor",
+        "container",
+        "cloud"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "types",
+          "prompt": "Che differenza c'è tra un hypervisor di tipo 1 e uno di tipo 2? Fai un esempio di ciascuno.",
+          "answer": "Il tipo 1 (bare metal) gira direttamente sull'hardware del server, senza un sistema operativo sotto, ed è usato nei data center: VMware ESXi, Hyper-V, KVM. Il tipo 2 (hosted) gira come applicazione sopra un sistema operativo esistente ed è usato per test e laboratori: VirtualBox, VMware Workstation.",
+          "keyPoints": [
+            "Tipo 1: sull'hardware",
+            "Tipo 2: sopra un OS"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "vm-container",
+          "prompt": "Perché un container si avvia più in fretta di una VM, e qual è il compromesso?",
+          "answer": "Il container non contiene un sistema operativo completo: condivide il kernel dell'host e include solo l'applicazione e le sue dipendenze, quindi non deve avviare un OS. Il compromesso è un isolamento minore: tutti i container dipendono dallo stesso kernel.",
+          "keyPoints": [
+            "Kernel condiviso",
+            "Più leggero, meno isolato"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "trunk",
+          "prompt": "Perché la porta dello switch verso un server di virtualizzazione è spesso configurata come trunk?",
+          "answer": "Perché sul server girano VM che appartengono a VLAN diverse. Il vSwitch dell'hypervisor riceve i frame taggati 802.1Q dall'uplink fisico e li consegna alle VM della VLAN corretta.",
+          "keyPoints": [
+            "VM in VLAN diverse",
+            "vSwitch gestisce i tag"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "trunk-8021q"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "wireless-rf-channels",
+      "revision": 1,
+      "kind": "lesson",
+      "language": "it",
+      "title": "Wi-Fi: bande, canali e caratteristiche RF",
+      "summary": "2,4 GHz arriva più lontano ma ha solo tre canali non sovrapposti; 5 e 6 GHz offrono molti più canali e meno interferenze, con una copertura minore.",
+      "body": "### Bande\n| | 2,4 GHz | 5 GHz | 6 GHz |\n|---|---|---|---|\n| Portata | maggiore | minore | minore |\n| Penetrazione nei muri | migliore | peggiore | peggiore |\n| Canali da 20 MHz non sovrapposti | **3** (1, 6, 11) | molti (circa 20–25, secondo il paese) | molti di più |\n| Interferenze | molte: Bluetooth, forni a microonde, reti vicine | meno; alcuni canali richiedono DFS per non disturbare i radar | poche |\n| Standard | 802.11b/g/n/ax | 802.11a/n/ac/ax | 802.11ax (Wi-Fi 6E) e successivi |\n\n### Canali\nUn canale a 2,4 GHz è largo circa 22 MHz (20 MHz per OFDM), ma i canali sono distanziati di soli 5 MHz: due AP vicini sui canali 1 e 3 si disturbano. Con 1, 6 e 11 non ci sono sovrapposizioni. In 5 GHz si possono unire canali adiacenti (40, 80, 160 MHz) per avere più banda, al prezzo di meno canali disponibili.\n\n### Caratteristiche RF\n- **Ampiezza** e **potenza**: si misurano in **dBm**. −30 dBm è un segnale fortissimo, −67 dBm è un valore tipico minimo per la voce, −90 dBm è vicino al rumore. +3 dB = potenza doppia, −3 dB = metà.\n- **RSSI**: potenza del segnale ricevuto. **SNR**: differenza tra segnale e rumore; più è alto, meglio è.\n- Comportamenti del segnale: **assorbimento** (muri, acqua, persone), **riflessione** (metallo, vetri), **rifrazione**, **diffrazione** attorno agli ostacoli, **scattering** su superfici irregolari.\n\n### Nella progettazione\nSi pianificano le celle in modo che gli AP adiacenti usino canali diversi, e si preferiscono 5 e 6 GHz per gli utenti che le supportano.",
+      "trackId": "ccna",
+      "topicId": "wireless-fundamentals",
+      "difficulty": 1,
+      "prerequisites": [
+        "network-devices"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.5",
+        "ccna-v2:1.5.a",
+        "ccna-v2:1.5.b"
+      ],
+      "sources": [
+        {
+          "title": "IEEE 802.11 — Wireless LAN Medium Access Control and Physical Layer Specifications",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "wireless",
+        "wi-fi",
+        "canali",
+        "rf"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "channels",
+          "prompt": "Devi installare tre AP vicini in banda 2,4 GHz. Quali canali assegni e perché?",
+          "answer": "1, 6 e 11: sono gli unici tre canali da 20 MHz che non si sovrappongono nella banda 2,4 GHz, perché i canali sono distanziati di 5 MHz mentre ognuno occupa circa 20–22 MHz.",
+          "keyPoints": [
+            "1, 6, 11",
+            "Canali distanziati 5 MHz"
+          ],
+          "commonMistakes": [
+            "Usare 1, 2, 3 pensando che numeri diversi bastino"
+          ]
+        },
+        {
+          "key": "db",
+          "prompt": "Un client passa da −55 dBm a −58 dBm. Quanto è cambiata la potenza ricevuta?",
+          "answer": "È dimezzata: una diminuzione di 3 dB corrisponde alla metà della potenza.",
+          "keyPoints": [
+            "−3 dB = metà",
+            "+3 dB = doppio"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "wireless-security",
+        "wireless-interference"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "wireless-security",
+      "revision": 1,
+      "kind": "comparison",
+      "language": "it",
+      "title": "Sicurezza Wi-Fi: da WEP a WPA3",
+      "summary": "WEP e WPA sono superati. WPA2 con AES è ancora diffuso; WPA3 sostituisce la PSK con SAE e rende obbligatoria la protezione dei frame di gestione.",
+      "body": "| | WEP | WPA | WPA2 | WPA3 |\n|---|---|---|---|---|\n| Cifratura | RC4 | TKIP (RC4) | **AES-CCMP** | AES-CCMP / **GCMP** |\n| Stato | violato, da non usare | deprecato | ancora diffuso | raccomandato |\n| Personal | chiave statica | PSK | PSK | **SAE** |\n| Enterprise | — | 802.1X | 802.1X | 802.1X, con modalità a 192 bit |\n| Protezione dei frame di gestione (PMF) | no | no | facoltativa | **obbligatoria** |\n\n### Personal ed Enterprise\n- **Personal**: tutti usano la stessa passphrase. Semplice, adatto a casa e piccoli uffici. Con WPA2-PSK, chi cattura l'handshake può tentare di indovinare la password offline.\n- **Enterprise**: ogni utente si autentica con le proprie credenziali o un certificato tramite **802.1X/EAP**. L'AP (o il controller WLC) fa da autenticatore e inoltra le richieste a un server **RADIUS**. Revocare un utente non richiede di cambiare la password a tutti.\n\n### Cosa migliora WPA3\n- **SAE** (Simultaneous Authentication of Equals) sostituisce la PSK: resiste agli attacchi a dizionario offline e garantisce *forward secrecy*.\n- **PMF** obbligatoria: impedisce gli attacchi di deautenticazione con frame di gestione falsi.\n- **Enhanced Open (OWE)**: cifratura anche sulle reti aperte senza password, come quelle per gli ospiti.",
+      "trackId": "ccna",
+      "topicId": "wireless-fundamentals",
+      "difficulty": 2,
+      "prerequisites": [
+        "wireless-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.5",
+        "ccna-v2:1.5.c"
+      ],
+      "sources": [
+        {
+          "title": "IEEE 802.11 — Wireless LAN Medium Access Control and Physical Layer Specifications",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "RFC 2865 — Remote Authentication Dial In User Service (RADIUS)",
+          "publisher": "RFC Editor",
+          "type": "rfc",
+          "url": "https://www.rfc-editor.org/rfc/rfc2865.txt",
+          "verifiedOn": "2026-11-27"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "professional",
+      "reviewStatus": "proposed",
+      "tags": [
+        "wireless",
+        "wpa3",
+        "802-1x",
+        "sicurezza"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "enterprise",
+          "prompt": "Perché in azienda si preferisce WPA2/WPA3-Enterprise a una passphrase condivisa?",
+          "answer": "Con Enterprise ogni utente si autentica individualmente via 802.1X/EAP contro un server RADIUS: si può revocare un singolo accesso, applicare policy per utente e registrare chi si collega. Con una passphrase condivisa, l'uscita di un dipendente obbliga a cambiarla su tutti i dispositivi e non si sa chi si è collegato.",
+          "keyPoints": [
+            "Credenziali individuali",
+            "802.1X + RADIUS",
+            "Revoca per utente"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "sae",
+          "prompt": "Quale vulnerabilità di WPA2-PSK affronta SAE in WPA3?",
+          "answer": "Con WPA2-PSK chi cattura il 4-way handshake può provare offline milioni di password finché non trova quella giusta. SAE usa uno scambio che non espone dati utili a questo attacco: ogni tentativo richiede un'interazione con la rete, rendendo impraticabile l'attacco a dizionario offline.",
+          "keyPoints": [
+            "Attacco a dizionario offline",
+            "SAE lo impedisce"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "wireless-rf-channels",
+        "aaa-tacacs-radius"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    },
+    {
+      "id": "wireless-interference",
+      "revision": 1,
+      "kind": "troubleshooting",
+      "language": "it",
+      "title": "Scenario: Wi-Fi lento in sala riunioni all'ora di pranzo",
+      "summary": "Segnale forte ma prestazioni pessime in certi orari. Si distinguono interferenze Wi-Fi (co-channel, canale adiacente) e non Wi-Fi.",
+      "body": "### Situazione\nIn sala riunioni l'RSSI è buono (−55 dBm), ma tra le 12 e le 14 le videochiamate si bloccano. I client sono collegati a 2,4 GHz. Accanto alla sala c'è la cucina con due forni a microonde.\n\n### Ipotesi\n1. **Interferenza non Wi-Fi**: i forni a microonde lavorano intorno a 2,45 GHz e disturbano soprattutto i canali alti della banda 2,4 GHz. Il problema compare quando i forni sono accesi, cioè all'ora di pranzo. Anche telefoni cordless, Bluetooth e telecamere wireless possono interferire.\n2. **Co-channel interference**: più AP sullo stesso canale si sentono e devono dividersi il tempo di trasmissione. Non è rumore, ma **contesa**: la capacità si riduce.\n3. **Adjacent channel interference**: AP vicini su canali sovrapposti (es. 1 e 3) si disturbano come rumore, peggio della co-channel.\n4. **Troppi client** sullo stesso AP durante una riunione affollata.\n\n### Come verificare\n- Confrontare l'**SNR**, non solo l'RSSI: se il rumore sale nelle ore del problema, l'SNR crolla anche con segnale forte.\n- Usare l'analisi dello spettro del controller (o di un analizzatore) per riconoscere le firme di microonde e Bluetooth.\n- Verificare il piano dei canali degli AP vicini.\n\n### Soluzioni\n- Spostare i client su **5 GHz** o 6 GHz (*band steering*), dove i microonde non interferiscono.\n- Rivedere i canali a 2,4 GHz usando solo 1, 6, 11 e ridurre la potenza degli AP per limitare le sovrapposizioni.\n- Riposizionare l'AP lontano dalla cucina, se possibile.",
+      "trackId": "ccna",
+      "topicId": "wireless-fundamentals",
+      "difficulty": 2,
+      "prerequisites": [
+        "wireless-fundamentals"
+      ],
+      "readingMinutes": 4,
+      "objectives": [
+        "ccna-v2:1.5.d",
+        "ccna-v2:1.6"
+      ],
+      "sources": [
+        {
+          "title": "IEEE 802.11 — Wireless LAN Medium Access Control and Physical Layer Specifications",
+          "publisher": "IEEE",
+          "type": "standard"
+        },
+        {
+          "title": "Implementing and Administering Cisco Solutions (200-301 CCNA) v2.0 — Exam Topics",
+          "publisher": "Cisco",
+          "type": "official",
+          "verifiedOn": "2026-11-27"
+        }
+      ],
+      "provenance": "hypothetical",
+      "reviewStatus": "proposed",
+      "tags": [
+        "wireless",
+        "interferenze",
+        "troubleshooting"
+      ],
+      "diagrams": [],
+      "recall": [
+        {
+          "key": "snr",
+          "prompt": "Un client ha RSSI −55 dBm ma prestazioni pessime. Perché l'RSSI da solo non basta per diagnosticare il problema?",
+          "answer": "Perché le prestazioni dipendono dal rapporto segnale/rumore (SNR). Se c'è molto rumore, ad esempio da un forno a microonde, l'SNR è basso anche con un segnale forte e il client deve ritrasmettere o usare velocità più basse.",
+          "keyPoints": [
+            "Conta l'SNR",
+            "Rumore alto = SNR basso anche con buon RSSI"
+          ],
+          "commonMistakes": []
+        },
+        {
+          "key": "cci-aci",
+          "prompt": "Che differenza c'è tra co-channel interference e adjacent channel interference?",
+          "answer": "Nella co-channel più AP usano lo stesso canale: si riconoscono e si alternano nella trasmissione, quindi la capacità si divide ma i frame restano decodificabili. Nell'adjacent channel gli AP usano canali sovrapposti ma diversi: non si coordinano e ciascuno vede l'altro come rumore, con errori e ritrasmissioni.",
+          "keyPoints": [
+            "Co-channel: contesa",
+            "Adjacent: rumore, peggio"
+          ],
+          "commonMistakes": []
+        }
+      ],
+      "related": [
+        "wireless-rf-channels"
+      ],
+      "createdAt": "2026-11-27",
+      "updatedAt": "2026-11-27"
+    }
+  ]
+}

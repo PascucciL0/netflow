@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { seedItemById, seedItems } from "@/data/catalog";
 import { ContentDetail } from "@/components/content/content-detail";
+import { ImportedDetail } from "@/components/import/imported-detail";
 
 export function generateStaticParams() {
   return seedItems.map((i) => ({ id: i.id }));
@@ -24,6 +24,7 @@ export default function ContentPage({ params }: PageProps<"/c/[id]">) {
 async function Resolved({ params }: { params: PageProps<"/c/[id]">["params"] }) {
   const { id } = await params;
   const item = seedItemById.get(id);
-  if (!item) notFound();
+  // Gli id non di sistema possono essere contenuti importati, salvati solo nel browser.
+  if (!item) return <ImportedDetail id={id} />;
   return <ContentDetail item={item} />;
 }

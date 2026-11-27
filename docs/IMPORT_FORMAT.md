@@ -2,7 +2,7 @@
 
 Schema di riferimento (fonte di verità): `src/domain/import-schema.ts` e `src/domain/content.ts`. Il seed in `content/ccna/items/` è un esempio completo e valido.
 
-> Stato: lo **schema e la validazione** sono implementati e testati. La **schermata di import** (anteprima, gestione duplicati, storico) è il prossimo lavoro del flusso "Content & Import".
+> Stato: schema, validazione e **schermata di import** (`/import`, raggiungibile da Impostazioni) sono implementati e testati (`tests/import.test.ts`). Logica in `src/data/import-plan.ts`, archiviazione locale in `src/data/import-store.ts`. Per generare pacchetti con un assistente AI esterno: [`CONTENT_GENERATION_PROMPT.md`](./CONTENT_GENERATION_PROMPT.md).
 
 ## Struttura
 
@@ -46,7 +46,7 @@ Campi non previsti a livello di pacchetto vengono rifiutati.
 | `provenance` | enum | sì | `official` `original` `professional` `hypothetical` |
 | `reviewStatus` | enum | no | `proposed` (default) o `approved` (formulazione approvata dallo studente) |
 | `tags` | ≤ 12 | no | `^[a-z0-9-]{2,40}$` |
-| `diagrams` | ≤ 4 | no | `{ id, caption? }`, id dal registro: `mac-learning` `osi-tcpip-stack` `ethernet-frame` `arp-exchange` `tcp-handshake` `dhcp-dora` |
+| `diagrams` | ≤ 4 | no | `{ id, caption? }`, id dal registro: `mac-learning` `osi-tcpip-stack` `ethernet-frame` `arp-exchange` `tcp-handshake` `dhcp-dora` `dot1q-frame` `ipv6-gua-structure` `slaac-exchange` `pat-translation` `ospf-adjacency` |
 | `recall` | ≤ 8 | no* | `{ key, prompt, answer, keyPoints[], commonMistakes[] }`. *Obbligatorio per `recall` e `flashcard`. `key` stabile |
 | `related` | slug[] ≤ 10 | no | id di altri contenuti |
 | `createdAt`, `updatedAt` | YYYY-MM-DD | sì | `updatedAt ≥ createdAt` |
@@ -63,3 +63,15 @@ Campi non previsti a livello di pacchetto vengono rifiutati.
 ## Limiti di sicurezza
 
 File ≤ 2 MB, ≤ 300 contenuti per pacchetto, testo con lunghezze massime, nessun HTML/JS/SVG eseguibile, URL solo https, diagrammi solo da registro chiuso.
+
+## Come funziona la schermata di import
+
+1. **Sorgente**: file `.json` (controllo della dimensione prima della lettura) oppure testo incollato.
+2. **Validazione in fasi**, che si ferma alla prima fallita: dimensione → sintassi JSON (con riga e colonna) → schema (messaggi in italiano per campo, raggruppati per contenuto) → sicurezza → riferimenti al catalogo.
+   - *Sicurezza*: rifiutati i pacchetti che contengono tag HTML attivi (`<script>`, `<iframe>`, `<svg>`…), gestori di eventi (`onclick=`) o URL `javascript:`/`vbscript:`/`data:` in qualsiasi campo di testo. Il renderer li neutralizzerebbe comunque: il rifiuto segnala un file manipolato o generato male.
+   - *Riferimenti*: `topicId`, `prerequisites`, `objectives` e `diagrams` devono esistere (errore). Un `related` sconosciuto è solo un avviso.
+3. **Anteprima**: per ogni contenuto l'azione prevista (nuovo, aggiornato, già presente, versione più vecchia, id riservato), le domande di recall rimosse da un aggiornamento e il caso "stesso `revision` ma testo diverso".
+4. **Conferma**: la libreria importata viene ricalcolata per intero e scritta con un'unica operazione. Se nel frattempo un'altra scheda ha modificato la libreria, l'import viene rifiutato e va rianalizzato.
+5. **Storico**: ultimi 50 import, con possibilità di rimuovere i contenuti di un pacchetto (lo storico dei ripassi resta) ed esportare tutti i contenuti importati come pacchetto reimportabile.
+
+In modalità locale i contenuti importati sono salvati nel browser (`localStorage`, chiave `netflow:v1:imported`) e rivalidati a ogni lettura. Con Supabase andranno nella tabella dei contenuti dell'utente (flusso Database).
