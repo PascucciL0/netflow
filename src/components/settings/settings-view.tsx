@@ -1,6 +1,7 @@
 "use client";
 
-import { Download, Monitor, Moon, Sun } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Download, FileUp, Monitor, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { emptySnapshot, type UserPreferences } from "@/domain/progress";
 import { downloadJson, makeBackup } from "@/data/backup";
@@ -74,6 +75,14 @@ export function SettingsView() {
 
       <section aria-labelledby="s-data">
         <h2 id="s-data" className="meta-strip mb-3">I tuoi dati</h2>
+        <Link href="/import" className="mb-3 flex items-center gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 hover:bg-surface-2">
+          <FileUp size={18} className="text-accent-text" aria-hidden />
+          <span className="flex-1">
+            <span className="block text-[15px] font-medium text-ink">Importa contenuti</span>
+            <span className="block text-[13.5px] text-ink-3">Appunti e lezioni da file JSON, con anteprima e storico</span>
+          </span>
+          <ChevronRight size={18} className="text-ink-3" aria-hidden />
+        </Link>
         <div className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
           <p className="text-[14.5px] leading-relaxed text-ink-2">
             In modalità locale i progressi restano solo in questo browser. Esporta un backup regolarmente: contiene stato degli argomenti, interazioni, ripassi e storico delle valutazioni.
