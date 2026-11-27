@@ -78,3 +78,4 @@ Gli ADR sono in `docs/adr/`. Indice:
 | 0004 | Spaced repetition con FSRS (ts-fsrs 5.4.2), mapping valutazioni, lettura ≠ revisione |
 | 0005 | Feed deterministico: bucket, interleaving pesato, vincoli di varietà, niente infinito |
 | 0006 | Diagrammi come registro chiuso di componenti React/SVG (niente Mermaid/SVG importati) |
+| 0007 | News come contratto separato `NewsItem` (non un ContentKind), allowlist statica delle fonti |
