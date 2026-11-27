@@ -1,26 +1,161 @@
 @import "tailwindcss";
+@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/*
+ * NetFlow design tokens. Documentazione: docs/DESIGN_SYSTEM.md
+ * Il tema si sceglie con data-theme="light|dark" su <html>; in assenza segue il sistema.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --surface-3: #e6e9ee;
+  --line: #e1e5eb;
+  --line-strong: #c9d0da;
+  --text: #0d1320;
+  --text-2: #465264;
+  --text-3: #667185;
+  --accent: #1f5fd6;
+  --accent-text: #1a52bb;
+  --accent-soft: #e8effc;
+  --on-accent: #ffffff;
+  --again: #c23b3b;
+  --hard: #a8650c;
+  --good: #1f5fd6;
+  --easy: #12795a;
+  --code-bg: #f0f2f5;
+  --shadow: 0 1px 2px rgb(13 19 32 / 0.04), 0 4px 16px rgb(13 19 32 / 0.04);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07090d;
+  --surface: #0e1218;
+  --surface-2: #141a23;
+  --surface-3: #1c2430;
+  --line: #1f2733;
+  --line-strong: #2d3847;
+  --text: #e8ecf3;
+  --text-2: #a7b1c1;
+  --text-3: #7d899b;
+  --accent: #4c8dff;
+  --accent-text: #85b0ff;
+  --accent-soft: rgb(76 141 255 / 0.13);
+  --on-accent: #050a14;
+  --again: #f07a7a;
+  --hard: #e8ad5a;
+  --good: #6fa3ff;
+  --easy: #4cc79a;
+  --code-bg: #0a0d12;
+  --shadow: none;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-ink-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-again: var(--again);
+  --color-hard: var(--hard);
+  --color-good: var(--good);
+  --color-easy: var(--easy);
+  --color-code: var(--code-bg);
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --shadow-card: var(--shadow);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "tnum" 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* Header strip in stile "campo di protocollo" usato nelle card. */
+.meta-strip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Tipografia dei contenuti didattici (Markdown). */
+.prose-nf {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.prose-nf > * + * { margin-top: 0.9em; }
+.prose-nf h2 { font-size: 1.15rem; font-weight: 600; margin-top: 1.8em; letter-spacing: -0.01em; }
+.prose-nf h3 { font-size: 1.02rem; font-weight: 600; margin-top: 1.6em; color: var(--text); }
+.prose-nf strong { font-weight: 600; color: var(--text); }
+.prose-nf a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.prose-nf ul { list-style: disc; padding-left: 1.25rem; }
+.prose-nf ol { list-style: decimal; padding-left: 1.25rem; }
+.prose-nf li + li { margin-top: 0.35em; }
+.prose-nf li::marker { color: var(--text-3); }
+.prose-nf :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 0.08em 0.35em;
+  border-radius: 5px;
+}
+.prose-nf pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+.prose-nf table { width: 100%; border-collapse: collapse; font-size: 0.9rem; display: block; overflow-x: auto; }
+.prose-nf th, .prose-nf td { text-align: left; padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.prose-nf th { font-weight: 600; color: var(--text-2); font-size: 0.8rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
